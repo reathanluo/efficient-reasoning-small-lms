@@ -9,47 +9,87 @@ And do the two compose? The hypotheses and success criteria are in [docs/researc
 
 **Deadline:** Mon 16 Nov 2026, 11:59 PM. We aim to submit on Sun 15 Nov.
 
-## Who owns what
+## What each person does
 
-Each person owns one stage of the pipeline: the folders below, and the report sections that describe them. You can read and run anything. To change a folder you don't own, open a pull request and tag its owner. Shared files need approval from both other members. The workflow is in [CONTRIBUTING.md](CONTRIBUTING.md).
+Each person owns one stage of the pipeline: its folders, its jobs on the cluster, and the report sections that describe it. Everyone can read and run anything. To change a folder you don't own, open a pull request (PR) and tag its owner. The git workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). Live task status is in the [tracker](https://claude.ai/artifact/Lov9qQxdkCTrFS5uhqqnQy).
 
-| Folder | Owner | What lives there |
-|---|---|---|
-| `reasoning/teacher/`, `scripts/teacher/`, `data/sft/` | **Person A**: teacher data | Teacher generation, rejection sampling, concise rewrites, the 4 SFT datasets |
-| `reasoning/train/`, `scripts/train/`, `configs/` | **Person B**: training | LoRA SFT script, hyperparameter configs, adapter training jobs |
-| `reasoning/eval/`, `scripts/eval/`, `results/` | **Person C**: evaluation | Generation, scoring, statistics, baselines, final tables and figures |
-| `reasoning/{data,prompts,answer,stats}.py`, `data/splits/`, `tests/` | **Shared**: needs both others' approval | Splits, prompt format, answer parser, statistics. Every condition depends on these, so a change affects everyone's results. |
-| `docs/`, `notebooks/` | **Everyone** | Planning docs, assignment files, report assets, exploration notebooks |
+### Person A: teacher data
 
-The handoffs between stages are written down as contracts, so nobody waits on anyone's code:
+**Your folders:** `reasoning/teacher/`, `scripts/teacher/`, `data/sft/`
 
-- **A → B:** `data/sft/{style}.jsonl`. The format is in [reasoning/teacher/\_\_init\_\_.py](reasoning/teacher/__init__.py). Due **Mon 2 Nov**.
-- **B → C:** `ckpt/{style}_{size}_s{seed}/` LoRA adapters. The format is in [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py).
-- **C → report:** `results/tables/` and `results/figures/`. Frozen **Thu 12 Nov**.
+1. Pick the teacher models (about 7B), and write `reasoning/teacher/` code that runs them with vLLM on all 6,973 problems in `data/splits/gsm8k_train.jsonl`. Generate a **standard** and a **long** rationale for each problem.
+2. Keep only rationales whose final answer is correct. Check them with `reasoning.answer.is_correct`, not a new parser.
+3. Make a **concise** rewrite of each long rationale, and check the answer didn't change.
+4. Write the four datasets plus `stats.json` to `data/sft/`, in the format in [reasoning/teacher/\_\_init\_\_.py](reasoning/teacher/__init__.py). Use exactly the same problem IDs in every file. **Due Mon 2 Nov.**
+5. Read the six papers in `docs/research-question-card.md` in full and check every citation.
+6. **Report:** literature review and the Data subsection.
 
-## Layout
+### Person B: training
 
-```
-reasoning/            Python package (run modules with python -m from the repo root)
-  data.py prompts.py answer.py stats.py   shared core
-  teacher/            Person A
-  train/              Person B
-  eval/               Person C: generate.py, evaluate.py, compare.py
-scripts/{teacher,train,eval}/   SLURM / shell job scripts, by owner
-configs/              frozen training hyperparameters (B)
-data/splits/          fixed train/val/test/OOD splits (committed, shared)
-data/sft/             the 4 SFT datasets (A)
-results/              small committed outputs used in the report (C)
-notebooks/            exploration, one file per person
-docs/                 assignment PDFs, research card, handbook, report assets
-tests/                unit tests (run by GitHub Actions on every push)
-runs/ ckpt/ logs/     large outputs: gitignored, kept on the cluster
-```
+**Your folders:** `reasoning/train/`, `scripts/train/`, `configs/`
+
+1. Write the LoRA SFT script in `reasoning/train/`. Build inputs with `prompts.chat_prompt` and targets with `prompts.format_target`, and compute the loss on answer tokens only.
+2. **Don't wait for A.** Debug it on GSM8K's human solutions, which are already in `data/splits/gsm8k_train.jsonl` (the `solution` field).
+3. Sweep learning rate, epochs and rank (8, 16, 32) on `gsm8k_val`. Save the winning settings in `configs/` and freeze them.
+4. From 2 Nov, train 24 adapters: 4 styles × 2 sizes × 3 seeds. Save them to `ckpt/{style}_{size}_s{seed}/`, each with a `train_log.json`, in the format in [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py).
+5. **Report:** Methods (SFT, LoRA, training setup) and the hyperparameter table.
+
+### Person C: evaluation
+
+**Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
+
+1. **This week:** set up the cluster environment, fill in the `ADAPT` lines in `scripts/eval/slurm_baselines.sh`, and run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
+2. Evaluate each of B's adapters on `gsm8k_val`: greedy, and 16 samples for self-consistency.
+3. From 9 Nov, do the final runs on `gsm8k_test`, `svamp` and `gsm_symbolic` with the frozen settings.
+4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
+5. **Report:** Experiments and Results.
+
+### Everyone
+
+- **9–11 Nov:** error taxonomy. Each person labels about 100 wrong answers. All three label the same 30, to check you agree.
+- **13–15 Nov:** Introduction, Discussion and the AI Use Statement. Then everyone reads the whole report and checks they can explain every part.
+- **Shared code** (`reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py`, `data/splits/`, `tests/`): only change it through a PR that both other people approve. Every result depends on it.
+- **Sun 15 Nov:** the leader submits the PDF report and the code ZIP on NTULearn.
+
+## What each folder means
+
+| Folder | What it is | Owner | In git? |
+|---|---|---|---|
+| `reasoning/` | The project's Python package. Run its modules from the repo root with `python -m reasoning.<module>`. | — | yes |
+| `reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py` | Shared core: the data splits, the one prompt format, the one answer parser, statistics helpers | Shared | yes |
+| `reasoning/teacher/` | Teacher generation, rejection sampling and concise rewriting. Its `__init__.py` holds the output format. | A | yes |
+| `reasoning/train/` | LoRA fine-tuning code. Its `__init__.py` holds the adapter format. | B | yes |
+| `reasoning/eval/` | `generate.py` (run a model), `evaluate.py` (score a run), `compare.py` (significance tests) | C | yes |
+| `scripts/teacher/`, `scripts/train/`, `scripts/eval/` | Shell and SLURM job scripts for the cluster, one folder per owner | A / B / C | yes |
+| `configs/` | The frozen training hyperparameters | B | yes |
+| `data/splits/` | Fixed train / val / test / out-of-distribution splits. Everyone uses these exact files. | Shared | yes |
+| `data/sft/` | The four training datasets (`long`, `standard`, `concise`, `answer_only`) and `stats.json` | A | yes; `raw/` is not |
+| `results/tables/`, `results/figures/` | The small final outputs the report uses: summary JSON, CSV tables, plots | C | yes |
+| `notebooks/` | Exploration notebooks, named `<letter>_<topic>.ipynb` so nobody edits the same one | Everyone | yes |
+| `docs/assignment/` | The project handout and FAQ | Everyone | yes |
+| `docs/research-question-card.md` | Research question, hypotheses H1–H3, success criteria, paper list | Everyone | yes |
+| `docs/handbook.docx` | Snapshot of the project handbook | Everyone | yes |
+| `docs/report/` | Report figures, final PDF, `references.bib` | Everyone | yes |
+| `tests/` | Unit tests. GitHub runs them on every push. | Shared | yes |
+| `.github/workflows/` | The automatic test run | Shared | yes |
+| `runs/` | Raw model outputs from `reasoning.eval.generate` (large) | C | **no**, stays on the cluster |
+| `ckpt/` | Trained LoRA adapters (large) | B | **no**, stays on the cluster |
+| `logs/` | SLURM job logs | Everyone | **no** |
+
+## Handoffs
+
+The handoffs between stages are written down as file formats, so nobody waits on anyone's code:
+
+| From → to | What | Format | Due |
+|---|---|---|---|
+| A → B | `data/sft/{style}.jsonl` | [reasoning/teacher/\_\_init\_\_.py](reasoning/teacher/__init__.py) | Mon 2 Nov |
+| B → C | `ckpt/{style}_{size}_s{seed}/` LoRA adapters | [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py) | 2–8 Nov, as they finish |
+| C → report | `results/tables/`, `results/figures/` | [results/README.md](results/README.md) | Thu 12 Nov |
 
 ## Setup (NTU TC1 cluster)
 
 ```bash
-git clone <repo-url> && cd sc4001-group-project
+git clone https://github.com/reathanluo/sc4001-group-project.git && cd sc4001-group-project
 conda create -n sc4001-g python=3.11 -y
 conda activate sc4001-g
 pip install -r requirements.txt
