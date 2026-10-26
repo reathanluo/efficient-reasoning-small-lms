@@ -1,0 +1,7 @@
+# GPU cluster (Linux + CUDA). vLLM pins its own compatible torch, so install it first.
+vllm>=0.6
+transformers>=4.45
+datasets>=2.20
+peft>=0.12
+accelerate>=0.33
+pytest
