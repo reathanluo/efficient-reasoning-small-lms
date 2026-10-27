@@ -1,7 +1,12 @@
 """Concise style: rewrite each kept long rationale down to its key steps.
 
     python -m reasoning.teacher.compress data/sft/raw/long.filtered.jsonl \
-        --n 4 --out data/sft/raw/concise.filtered.jsonl
+        --n 2 --start 0 --limit 1700 --out data/sft/raw/concise.part0.jsonl
+
+Each rewrite re-reads a ~1,000-token long rationale, and on TC1's V100 (no
+prefix caching) prefill runs at only ~1k tokens/s, so split the 6.7k problems
+into parts of ~1,700 to stay well inside the 6-hour job limit. Parts can be
+concatenated in order afterwards.
 
 The concise rationale is a compression of the *same* long rationale, so the two
 styles share their reasoning and differ in length only. A rewrite is kept only
@@ -80,7 +85,8 @@ def main() -> None:
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=0.8)
     ap.add_argument("--max-new-tokens", type=int, default=512)
-    ap.add_argument("--limit", type=int, default=None, help="first N problems only (debugging)")
+    ap.add_argument("--start", type=int, default=0, help="skip the first N problems (to split a long run into jobs)")
+    ap.add_argument("--limit", type=int, default=None, help="at most N problems from --start")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--backend", choices=["vllm", "hf"], default="vllm")
     ap.add_argument("--dtype", default="auto", help="use float16 on GPUs without bfloat16 (e.g. V100)")
@@ -97,7 +103,7 @@ def main() -> None:
     def n_tokens(text: str) -> int:
         return len(tokenizer(text, add_special_tokens=False)["input_ids"])
 
-    rows = read_jsonl(Path(args.long))[: args.limit]
+    rows = read_jsonl(Path(args.long))[args.start:][: args.limit]
     prompts = [
         tokenizer.apply_chat_template(rewrite_messages(r["question"], r["rationale"]), tokenize=False, add_generation_prompt=True)
         for r in rows

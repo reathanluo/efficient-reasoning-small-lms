@@ -1,0 +1,36 @@
+{
+  "funnel": {
+    "gsm8k_train": 6973,
+    "kept_standard": 6797,
+    "kept_long": 6738,
+    "kept_concise": 6600,
+    "kept_all_styles": 6547
+  },
+  "tokenizer": "Qwen/Qwen2.5-0.5B",
+  "styles": {
+    "long": {
+      "count": 6547,
+      "mean_tokens": 1208.6,
+      "median_tokens": 1051,
+      "p90_tokens": 2016.0
+    },
+    "standard": {
+      "count": 6547,
+      "mean_tokens": 241.6,
+      "median_tokens": 229,
+      "p90_tokens": 366.0
+    },
+    "concise": {
+      "count": 6547,
+      "mean_tokens": 36.8,
+      "median_tokens": 33,
+      "p90_tokens": 62.0
+    },
+    "answer_only": {
+      "count": 6547,
+      "mean_tokens": 0,
+      "median_tokens": 0,
+      "p90_tokens": 0.0
+    }
+  }
+}
