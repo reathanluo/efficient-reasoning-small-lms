@@ -210,8 +210,9 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
 
 ## Status (27 Oct 2026)
 
-- The evaluation harness is written and its 26 unit tests pass. It has run end to end on a laptop (HF backend). **The vLLM path has not yet run on the cluster.**
-- The teacher (A) and training (B) packages hold interface contracts only.
+- The evaluation harness is written and its 26 unit tests pass. Its vLLM path, LoRA serving, `evaluate` and `compare` have run on a TC1 V100 (smoke test, 27 Oct).
+- Teacher data (A) is done: `data/sft/` holds the four datasets on 6,547 shared problems, with `stats.json`. How they were made is in `scripts/teacher/README.md`.
+- The training package (B) holds its interface contract only.
 
 Dependencies: see `requirements.txt` (vLLM, transformers, datasets, peft, accelerate, pytest).
 
