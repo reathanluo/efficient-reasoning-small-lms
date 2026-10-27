@@ -121,8 +121,9 @@ python -m pytest tests                   # must print 26 passed
 
 # Download the models once on the head node; jobs read them offline.
 export HF_HOME=$HOME/hf_cache
-for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwen2.5-1.5B-Instruct; do
-  hf download $m                         # older huggingface_hub: huggingface-cli download $m
+for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwen2.5-1.5B-Instruct \
+         Qwen/Qwen2.5-7B-Instruct deepseek-ai/DeepSeek-R1-Distill-Qwen-7B; do   # last two: teachers (A)
+  huggingface-cli download $m            # newer huggingface_hub: hf download $m
 done
 ```
 
@@ -138,7 +139,11 @@ seff <jobid>                             # after it ends: CPU and memory actuall
 
 Each job writes `slurm-<job-name>-<jobid>.out` and `.err` in the repo root (gitignored). If a job stays `PD` with a `QOS...Limit` reason, it asks for more than the QoS allows: lower `--mem`, `--cpus-per-task` or `--time`.
 
-The first baseline job is also the first test of vLLM on a V100. If it fails with a GPU "compute capability" error, the installed vLLM is too new for V100: install an older vLLM release in the environment, or run with `--backend hf` as a slower fallback, and tell the team.
+**Checked on a TC1 V100 (27 Oct, jobs 70022–70033):**
+
+- `requirements.txt` pins vLLM 0.7.3 (torch 2.5.1). The latest wheels (vLLM 0.32, torch 2.13) ship no V100 (sm_70) kernels and fail on TC1. If you installed before 27 Oct, rerun `pip install -r requirements.txt`.
+- Prefix caching is off by default in `reasoning/eval/generate.py`: on V100 a cache hit aborts with `mma -> mma layout conversion is only supported on Ampere`. Small runs can pass and the full run then crashes, so this is not optional.
+- The QoS allows 2 queued jobs but only 1 GPU, so a second GPU job waits with reason `QOSMaxGRESPerUser` until the first ends.
 
 ## Local setup (laptop, no GPU)
 
@@ -200,7 +205,7 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
   - approximate FLOPs, 2·N·(prompt + generated);
   - wall-clock time.
   
-  The 8-shot prompt's prefix is cached across questions, so its cost is mostly amortised.
+  The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1 prefix caching is off (see above), so wall-clock time includes recomputing it.
 - **Self-consistency:** 16 samples at T = 0.7. maj@k is computed from subsets of those 16.
 
 ## Status (27 Oct 2026)

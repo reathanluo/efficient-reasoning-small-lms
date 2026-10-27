@@ -57,7 +57,11 @@ def generate_vllm(args, prompts: List[str]) -> List[List[Dict]]:
         gpu_memory_utilization=args.gpu_mem,
         enable_lora=args.lora is not None,
         max_lora_rank=args.max_lora_rank,
-        enable_prefix_caching=True,  # the shared few-shot prefix is computed once
+        # Off by default: on V100 (TC1) a prefix-cache hit runs vLLM 0.7.3's Triton
+        # prefix-prefill kernel, which aborts with "mma -> mma layout conversion is
+        # only supported on Ampere". Turn on with --prefix-caching on A100 or newer.
+        # Cost accounting in evaluate.py counts the prompt once either way.
+        enable_prefix_caching=getattr(args, "prefix_caching", False),
     )
     params = SamplingParams(
         n=args.n,
@@ -149,6 +153,7 @@ def main() -> None:
     ap.add_argument("--max-model-len", type=int, default=4096)
     ap.add_argument("--gpu-mem", type=float, default=0.85)
     ap.add_argument("--max-lora-rank", type=int, default=64)
+    ap.add_argument("--prefix-caching", action="store_true", help="reuse the shared prompt prefix (Ampere or newer only)")
     args = ap.parse_args()
 
     if args.split == "gsm8k_test":

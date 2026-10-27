@@ -9,8 +9,8 @@ For each run it writes
 Cost accounting (state this in the report):
   * gen_tokens@k  = expected generated tokens per question when voting over k samples.
   * flops@k       ~ 2 * N_params * (prompt_tokens + gen_tokens@k). The prompt is
-                    counted once because vLLM prefix caching shares it across
-                    samples. Attention FLOPs are ignored (small at these lengths).
+                    counted once because the n samples of one vLLM request share
+                    its prefill. Attention FLOPs are ignored (small at these lengths).
 """
 from __future__ import annotations
 

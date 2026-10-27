@@ -1,7 +1,11 @@
 # GPU cluster (Linux + CUDA). vLLM pins its own compatible torch, so install it first.
-vllm>=0.6
-transformers>=4.45
+# TC1 has V100 GPUs (compute capability 7.0). Recent torch/vLLM wheels no longer
+# include sm_70 kernels (torch 2.13 + vLLM 0.32 ship sm_75 and up only), so pin the
+# last stack that does: vLLM 0.7.3 -> torch 2.5.1 (cu124) + xformers. Use
+# DTYPE=float16 on V100 (no bf16).
+vllm==0.7.3
+transformers>=4.48.2,<4.50
 datasets>=2.20
-peft>=0.12
-accelerate>=0.33
+peft==0.14.0
+accelerate>=0.33,<1.5
 pytest
