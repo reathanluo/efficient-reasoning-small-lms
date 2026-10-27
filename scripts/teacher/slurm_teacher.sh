@@ -2,7 +2,6 @@
 # SLURM job for one teacher step on TC1. Everything after the script name is
 # passed to `python -m`, so the same script runs generate, compress or build:
 #
-#   mkdir -p logs   # once: SLURM writes the log files there
 #   sbatch -J t-std-test scripts/teacher/slurm_teacher.sh reasoning.teacher.generate \
 #       --style standard --limit 50 --out data/sft/raw/test_standard.jsonl
 #
@@ -17,14 +16,20 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=06:00:00
-#SBATCH --output=logs/%x-%j.out
-#SBATCH --error=logs/%x-%j.err
+#SBATCH --output=slurm-%x-%j.out
+#SBATCH --error=slurm-%x-%j.err
 set -euo pipefail
 
 cd "$SLURM_SUBMIT_DIR"
 
-module load uv
-source .venv/bin/activate
+# The team's conda env from README.md, or a uv .venv in the repo if there is one.
+if [[ -f .venv/bin/activate ]]; then
+  module load uv
+  source .venv/bin/activate
+else
+  module load anaconda
+  source activate sc4001-g
+fi
 
 # Models are downloaded beforehand on the head node (compute nodes may have no
 # internet); point HF at that cache and forbid downloads here.

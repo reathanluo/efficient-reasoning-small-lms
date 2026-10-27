@@ -11,9 +11,17 @@ And do the two compose? The hypotheses and success criteria are in [docs/researc
 
 ## What each person does
 
-Each person owns one stage of the pipeline: its folders, its jobs on the cluster, and the report sections that describe it. Everyone can read and run anything. To change a folder you don't own, open a pull request (PR) and tag its owner. The git workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). Live task status is in the [tracker](https://claude.ai/artifact/Lov9qQxdkCTrFS5uhqqnQy).
+Each person owns one stage of the pipeline: its folders, its jobs on the cluster, and the report sections that describe it.
 
-### Person A: teacher data
+| Role | Name | GitHub |
+|---|---|---|
+| Person A: teacher data | Chen Han | [@Chen-Han-TX](https://github.com/Chen-Han-TX) |
+| Person B: training | Chua Jun Hong | [@leclerc162003](https://github.com/leclerc162003) |
+| Person C: evaluation | Luo Yuxuan | [@reathanluo](https://github.com/reathanluo) |
+
+Everyone can read and run anything. To change a folder you don't own, open a pull request (PR) and tag its owner. The git workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). Live task status is in the [tracker](https://claude.ai/artifact/Lov9qQxdkCTrFS5uhqqnQy).
+
+### Person A (Chen Han): teacher data
 
 **Your folders:** `reasoning/teacher/`, `scripts/teacher/`, `data/sft/`
 
@@ -24,7 +32,7 @@ Each person owns one stage of the pipeline: its folders, its jobs on the cluster
 5. Read the six papers in `docs/research-question-card.md` in full and check every citation.
 6. **Report:** literature review and the Data subsection.
 
-### Person B: training
+### Person B (Chua Jun Hong): training
 
 **Your folders:** `reasoning/train/`, `scripts/train/`, `configs/`
 
@@ -34,11 +42,11 @@ Each person owns one stage of the pipeline: its folders, its jobs on the cluster
 4. From 2 Nov, train 24 adapters: 4 styles × 2 sizes × 3 seeds. Save them to `ckpt/{style}_{size}_s{seed}/`, each with a `train_log.json`, in the format in [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py).
 5. **Report:** Methods (SFT, LoRA, training setup) and the hyperparameter table.
 
-### Person C: evaluation
+### Person C (Luo Yuxuan): evaluation
 
 **Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
 
-1. **This week:** set up the cluster environment, fill in the `ADAPT` lines in `scripts/eval/slurm_baselines.sh`, and run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
+1. **This week:** set up the TC1 environment (below), confirm your QoS with `MyTCinfo`, and submit `scripts/eval/slurm_baselines.sh` to run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
 2. Evaluate each of B's adapters on `gsm8k_val`: greedy, and 16 samples for self-consistency.
 3. From 9 Nov, do the final runs on `gsm8k_test`, `svamp` and `gsm_symbolic` with the frozen settings.
 4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
@@ -74,7 +82,7 @@ Each person owns one stage of the pipeline: its folders, its jobs on the cluster
 | `.github/workflows/` | The automatic test run | Shared | yes |
 | `runs/` | Raw model outputs from `reasoning.eval.generate` (large) | C | **no**, stays on the cluster |
 | `ckpt/` | Trained LoRA adapters (large) | B | **no**, stays on the cluster |
-| `logs/` | SLURM job logs | Everyone | **no** |
+| `slurm-*.out`, `slurm-*.err` | SLURM job logs, written in the repo root | Everyone | **no** |
 
 ## Handoffs
 
@@ -86,30 +94,56 @@ The handoffs between stages are written down as file formats, so nobody waits on
 | B → C | `ckpt/{style}_{size}_s{seed}/` LoRA adapters | [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py) | 2–8 Nov, as they finish |
 | C → report | `results/tables/`, `results/figures/` | [results/README.md](results/README.md) | Thu 12 Nov |
 
-## Setup (NTU TC1 cluster)
+## Setup on the TC1 cluster (NTU CCDS GPU cluster)
+
+From the TC1 user guide (Feb 2026). TC1 is reachable only from the NTU network: off campus, connect the NTU GlobalProtect VPN first (https://vpngate.ntu.edu.sg).
+
+| Fact | Value |
+|---|---|
+| Head node | `10.96.189.11` (`CCDS-TC1`), login with your NTU network ID in lower case |
+| GPUs | NVIDIA V100 32 GB: no bfloat16, so use `--dtype float16` / `DTYPE=float16` |
+| Partition, QoS | `UGGPU-TC1`, `normal` (check yours with `MyTCinfo`) |
+| QoS `normal` limits | 1 GPU, 20 CPUs, 64 GB memory, 2 jobs at a time, 6 hours per job |
+| Disk | About 100 GB home quota. Check with `ncdu`; nothing is backed up. |
+
+**Rules:** never run code on the head node (only setup commands such as `conda` and `pip`); run everything through `sbatch` job scripts, not `srun`; use only the QoS assigned to you. Breaking these gets jobs killed without notice.
+
+**One-time setup** (in an SSH session on the head node):
 
 ```bash
+ssh <ntu-id>@10.96.189.11
 git clone https://github.com/reathanluo/sc4001-group-project.git && cd sc4001-group-project
-module load uv
-uv venv --python 3.11
-source .venv/bin/activate
-uv pip install -r requirements.txt   # pinned to vLLM 0.7.3 / torch 2.5.1: newer wheels have no V100 kernels
+module load anaconda
+conda create -n sc4001-g python=3.11 -y
+source activate sc4001-g
+pip install -r requirements.txt          # vLLM only installs via pip
+python -m pytest tests                   # must print 26 passed
 
-# On the login node (compute nodes may have no internet), pre-download the models:
-echo 'export HF_HOME=$HOME/hf_cache' >> ~/.bashrc && export HF_HOME=$HOME/hf_cache
+# Download the models once on the head node; jobs read them offline.
+export HF_HOME=$HOME/hf_cache
 for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwen2.5-1.5B-Instruct \
-         Qwen/Qwen2.5-7B-Instruct deepseek-ai/DeepSeek-R1-Distill-Qwen-7B; do
-  huggingface-cli download $m
+         Qwen/Qwen2.5-7B-Instruct deepseek-ai/DeepSeek-R1-Distill-Qwen-7B; do   # last two: teachers (A)
+  huggingface-cli download $m            # newer huggingface_hub: hf download $m
 done
-mkdir -p logs                        # SLURM writes job logs here
 ```
 
-TC1 notes (checked 27 Oct on a V100, jobs 70022–70027):
+**Run a job:**
 
-- Never run Python on the head node; tests run at the start of each SLURM job.
-- Partition `UGGPU-TC1`, QoS `normal`: one GPU per user at a time, so a second GPU job waits in the queue (`QOSMaxGRESPerUser`); 6 h per job.
-- Always `--dtype float16` (V100 has no bf16). Prefix caching is off by default for the same GPU reason.
-- Off campus, connect the NTU VPN (GlobalProtect, portal `vpngate-student.ntu.edu.sg`) before `ssh`.
+```bash
+sbatch scripts/eval/slurm_baselines.sh   # prints a job id
+squeue -u <ntu-id>                       # PD = waiting, R = running
+tail -f slurm-g-baselines-<jobid>.out    # follow the log
+scancel <jobid>                          # stop it
+seff <jobid>                             # after it ends: CPU and memory actually used
+```
+
+Each job writes `slurm-<job-name>-<jobid>.out` and `.err` in the repo root (gitignored). If a job stays `PD` with a `QOS...Limit` reason, it asks for more than the QoS allows: lower `--mem`, `--cpus-per-task` or `--time`.
+
+**Checked on a TC1 V100 (27 Oct, jobs 70022–70033):**
+
+- `requirements.txt` pins vLLM 0.7.3 (torch 2.5.1). The latest wheels (vLLM 0.32, torch 2.13) ship no V100 (sm_70) kernels and fail on TC1. If you installed before 27 Oct, rerun `pip install -r requirements.txt`.
+- Prefix caching is off by default in `reasoning/eval/generate.py`: on V100 a cache hit aborts with `mma -> mma layout conversion is only supported on Ampere`. Small runs can pass and the full run then crashes, so this is not optional.
+- The QoS allows 2 queued jobs but only 1 GPU, so a second GPU job waits with reason `QOSMaxGRESPerUser` until the first ends.
 
 ## Local setup (laptop, no GPU)
 
@@ -144,7 +178,7 @@ python -m reasoning.data --out data/splits
 ## Running evaluation
 
 ```bash
-sbatch scripts/eval/slurm_baselines.sh      # edit its ADAPT lines first
+sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node
 bash scripts/eval/run_baselines.sh gsm8k_val  # or interactively on a GPU node
 
 python -m reasoning.eval.generate --model Qwen/Qwen2.5-1.5B-Instruct --prompt chat \
@@ -171,7 +205,7 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
   - approximate FLOPs, 2·N·(prompt + generated);
   - wall-clock time.
   
-  The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1's V100s prefix caching is off (it crashes there; see `reasoning/eval/generate.py`), so wall-clock time includes recomputing it.
+  The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1 prefix caching is off (see above), so wall-clock time includes recomputing it.
 - **Self-consistency:** 16 samples at T = 0.7. maj@k is computed from subsets of those 16.
 
 ## Status (27 Oct 2026)
