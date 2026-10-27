@@ -37,7 +37,6 @@ from pathlib import Path
 from typing import Dict, List, Set
 
 from ..data import load_split, read_jsonl
-from ..prompts import chat_messages
 from ..eval.generate import generate_hf, generate_vllm
 from .filter import pick
 
@@ -46,8 +45,9 @@ from .filter import pick
 STYLES: Dict[str, Dict] = {
     "standard": {
         "model": "Qwen/Qwen2.5-7B-Instruct",
-        # The same neutral instruction the students see, so "standard" is the
-        # Instruct model's natural working length.
+        # The students' neutral instruction makes the 7B teacher answer with
+        # "#### N" alone most of the time (job 70022: 48 of 50), so the teacher
+        # is asked to show its steps; their length is left to the model.
         "temperature": 0.7,
         "top_p": 0.8,
         "max_new_tokens": 1024,
@@ -63,12 +63,16 @@ STYLES: Dict[str, Dict] = {
 }
 
 LONG_INSTRUCTION = "Please reason step by step, and put your final answer within \\boxed{}."
+STANDARD_INSTRUCTION = (
+    "Solve the following math problem step by step. "
+    "Write your final answer on the last line in the form '#### <number>'."
+)
 
 
 def teacher_messages(style: str, question: str) -> List[Dict[str, str]]:
     if style == "long":
         return [{"role": "user", "content": f"{question}\n{LONG_INSTRUCTION}"}]
-    return chat_messages(question)
+    return [{"role": "user", "content": f"{STANDARD_INSTRUCTION}\n\n{question}"}]
 
 
 def solved_ids(raw_path: str, style: str) -> Set[str]:

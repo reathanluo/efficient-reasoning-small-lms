@@ -8,7 +8,8 @@ An attempt is kept only if
   * it finished on its own (finish_reason "stop", not cut off at the length limit),
   * the shared parser finds its answer in the requested format ("####" or
     \\boxed{}), not by falling back to the last number in the text, and
-  * that answer equals `gold` (answer.is_correct).
+  * that answer equals `gold` (answer.is_correct), and
+  * some working remains once the answer line is removed.
 For each problem the first passing attempt is kept, taking the raw files in the
 order given. The cleaned rationale is the working only: format_target appends
 the "#### answer" line at training time.
@@ -55,20 +56,27 @@ def clean_long(text: str) -> Optional[str]:
 CLEANERS = {"standard": clean_standard, "long": clean_long}
 
 
+def check(sample: Dict, gold: str, style: str) -> str:
+    """Why an attempt fails, or "passed". Shared by pick() and the summary counts."""
+    if sample["finish_reason"] != "stop":
+        return "truncated"
+    pred, method = extract_pred(sample["text"])
+    if method not in FORMAT_METHODS:
+        return "no_answer_format"
+    if not is_correct(pred, gold):
+        return "wrong_answer"
+    if not CLEANERS[style](sample["text"]):
+        return "no_working"  # answer only: nothing to learn the style from
+    return "passed"
+
+
 def pick(row: Dict, style: str) -> Optional[Dict]:
     """The first attempt that passes every check, cleaned, or None."""
     for attempt, s in enumerate(row["samples"]):
-        if s["finish_reason"] != "stop":
-            continue
-        pred, method = extract_pred(s["text"])
-        if method not in FORMAT_METHODS or not is_correct(pred, row["gold"]):
-            continue
-        rationale = CLEANERS[style](s["text"])
-        if not rationale:
-            continue
-        return {"id": row["id"], "question": row["question"], "gold": row["gold"],
-                "rationale": rationale, "style": style, "model": row["model"],
-                "attempt": attempt, "teacher_tokens": s["gen_tokens"]}
+        if check(s, row["gold"], style) == "passed":
+            return {"id": row["id"], "question": row["question"], "gold": row["gold"],
+                    "rationale": CLEANERS[style](s["text"]), "style": style, "model": row["model"],
+                    "attempt": attempt, "teacher_tokens": s["gen_tokens"]}
     return None
 
 
@@ -90,16 +98,7 @@ def main() -> None:
             chosen = pick(row, args.style)
             if chosen:
                 kept[row["id"]] = chosen
-            for s in row["samples"]:
-                pred, method = extract_pred(s["text"])
-                if s["finish_reason"] != "stop":
-                    reasons["truncated"] += 1
-                elif method not in FORMAT_METHODS:
-                    reasons["no_answer_format"] += 1
-                elif not is_correct(pred, row["gold"]):
-                    reasons["wrong_answer"] += 1
-                else:
-                    reasons["passed"] += 1
+            reasons.update(check(s, row["gold"], args.style) for s in row["samples"])
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
