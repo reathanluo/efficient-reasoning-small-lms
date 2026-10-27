@@ -20,7 +20,7 @@ import json
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from ..answer import extract_pred, is_correct
 from ..data import read_jsonl
@@ -80,12 +80,11 @@ def main() -> None:
     args = ap.parse_args()
 
     kept: Dict[str, Dict] = {}
-    seen: List[str] = []
+    seen: Dict[str, None] = {}  # insertion-ordered set of problem ids
     reasons = Counter()
     for path in args.raw:
         for row in read_jsonl(Path(path)):
-            if row["id"] not in seen:
-                seen.append(row["id"])
+            seen.setdefault(row["id"])
             if row["id"] in kept:
                 continue
             chosen = pick(row, args.style)

@@ -14,6 +14,10 @@ Long rationales from the reasoning model:
     python -m reasoning.teacher.generate --style long --n 1 \
         --out data/sft/raw/long.jsonl
 
+Split a long run into jobs that each fit the cluster's 6-hour limit:
+    python -m reasoning.teacher.generate --style long --start 0 --limit 2400 \
+        --out data/sft/raw/long.part0.jsonl
+
 Retry only the problems with no correct attempt yet:
     python -m reasoning.teacher.generate --style long --n 4 \
         --only-missing data/sft/raw/long.jsonl --out data/sft/raw/long.retry1.jsonl
@@ -32,10 +36,10 @@ import time
 from pathlib import Path
 from typing import Dict, List, Set
 
-from ..answer import extract_pred, is_correct
 from ..data import load_split, read_jsonl
 from ..prompts import chat_messages
 from ..eval.generate import generate_hf, generate_vllm
+from .filter import pick
 
 # One teacher per style. "concise" is rewritten from "long" by compress.py, and
 # "answer_only" needs no teacher, so only these two styles are sampled here.
@@ -67,13 +71,9 @@ def teacher_messages(style: str, question: str) -> List[Dict[str, str]]:
     return chat_messages(question)
 
 
-def solved_ids(raw_path: str) -> Set[str]:
-    """Problem ids in a raw file that already have at least one correct attempt."""
-    done = set()
-    for r in read_jsonl(Path(raw_path)):
-        if any(is_correct(extract_pred(s["text"])[0], r["gold"]) for s in r["samples"]):
-            done.add(r["id"])
-    return done
+def solved_ids(raw_path: str, style: str) -> Set[str]:
+    """Problem ids in a raw file that already have an attempt filter.py would keep."""
+    return {r["id"] for r in read_jsonl(Path(raw_path)) if pick(r, style)}
 
 
 def main() -> None:
@@ -87,7 +87,8 @@ def main() -> None:
     ap.add_argument("--top-p", type=float, default=None, help="default: the style's setting")
     ap.add_argument("--max-new-tokens", type=int, default=None, help="default: the style's setting")
     ap.add_argument("--only-missing", nargs="*", default=[], help="raw files; skip problems already solved in them")
-    ap.add_argument("--limit", type=int, default=None, help="first N problems only (debugging)")
+    ap.add_argument("--start", type=int, default=0, help="skip the first N problems (to split a long run into jobs)")
+    ap.add_argument("--limit", type=int, default=None, help="at most N problems from --start")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--backend", choices=["vllm", "hf"], default="vllm")
     ap.add_argument("--dtype", default="auto", help="use float16 on GPUs without bfloat16 (e.g. V100)")
@@ -110,15 +111,20 @@ def main() -> None:
     # Teacher data comes from gsm8k_train only; val/test never enter training.
     rows = load_split("gsm8k_train", args.splits_dir)
     if args.only_missing:
-        done = set().union(*(solved_ids(p) for p in args.only_missing))
+        done = set().union(*(solved_ids(p, args.style) for p in args.only_missing))
         rows = [r for r in rows if r["id"] not in done]
         print(f"{len(done)} problems already solved; generating for {len(rows)}", flush=True)
-    rows = rows[: args.limit]
+    rows = rows[args.start:][: args.limit]
 
     prompts = [
         tokenizer.apply_chat_template(teacher_messages(args.style, r["question"]), tokenize=False, add_generation_prompt=True)
         for r in rows
     ]
+    # R1-Distill's template already starts with the BOS token, and the generators
+    # add one when they tokenize the prompt, so drop it here to avoid a double BOS.
+    bos = tokenizer.bos_token
+    if bos:
+        prompts = [p[len(bos):] if p.startswith(bos) else p for p in prompts]
 
     t0 = time.time()
     if args.backend == "vllm":
