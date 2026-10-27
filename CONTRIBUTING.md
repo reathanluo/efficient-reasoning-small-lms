@@ -7,7 +7,7 @@ The aim: three people working in parallel without overwriting each other, and `m
 1. **Never commit straight to `main`.** Work on a branch and merge through a pull request (PR).
 2. **Stay in your own folders** (see the ownership table in the README). To change someone else's folder, open a PR and tag them.
 3. **Shared files need two approvals:** `reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py`, `data/splits/` and `tests/`. A change there changes everyone's results.
-4. **Never commit large outputs:** `runs/`, `ckpt/`, `logs/`, model weights, raw teacher output. They are gitignored. Keep them on the cluster.
+4. **Never commit large outputs:** `runs/`, `ckpt/`, SLURM logs (`slurm-*.out`), model weights, raw teacher output. They are gitignored. Keep them on the cluster.
 5. **Tests must pass** before you merge. GitHub runs them on every push, and you can run them yourself with `python -m pytest tests`.
 
 ## Daily workflow
