@@ -90,17 +90,26 @@ The handoffs between stages are written down as file formats, so nobody waits on
 
 ```bash
 git clone https://github.com/reathanluo/sc4001-group-project.git && cd sc4001-group-project
-conda create -n sc4001-g python=3.11 -y
-conda activate sc4001-g
-pip install -r requirements.txt
-python -m pytest tests          # must pass before any run
+module load uv
+uv venv --python 3.11
+source .venv/bin/activate
+uv pip install -r requirements.txt   # pinned to vLLM 0.7.3 / torch 2.5.1: newer wheels have no V100 kernels
 
 # On the login node (compute nodes may have no internet), pre-download the models:
-export HF_HOME=$HOME/hf_cache
-for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwen2.5-1.5B-Instruct; do
+echo 'export HF_HOME=$HOME/hf_cache' >> ~/.bashrc && export HF_HOME=$HOME/hf_cache
+for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwen2.5-1.5B-Instruct \
+         Qwen/Qwen2.5-7B-Instruct deepseek-ai/DeepSeek-R1-Distill-Qwen-7B; do
   huggingface-cli download $m
 done
+mkdir -p logs                        # SLURM writes job logs here
 ```
+
+TC1 notes (checked 27 Oct on a V100, jobs 70022–70027):
+
+- Never run Python on the head node; tests run at the start of each SLURM job.
+- Partition `UGGPU-TC1`, QoS `normal`: one GPU per user at a time, so a second GPU job waits in the queue (`QOSMaxGRESPerUser`); 6 h per job.
+- Always `--dtype float16` (V100 has no bf16). Prefix caching is off by default for the same GPU reason.
+- Off campus, connect the NTU VPN (GlobalProtect, portal `vpngate-student.ntu.edu.sg`) before `ssh`.
 
 ## Local setup (laptop, no GPU)
 
@@ -162,7 +171,7 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
   - approximate FLOPs, 2·N·(prompt + generated);
   - wall-clock time.
   
-  The 8-shot prompt's prefix is cached across questions, so its cost is mostly amortised.
+  The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1's V100s prefix caching is off (it crashes there; see `reasoning/eval/generate.py`), so wall-clock time includes recomputing it.
 - **Self-consistency:** 16 samples at T = 0.7. maj@k is computed from subsets of those 16.
 
 ## Status (27 Oct 2026)
