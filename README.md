@@ -102,6 +102,19 @@ for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwe
 done
 ```
 
+## Local setup (laptop, no GPU)
+
+For writing code, running tests and debugging on a few questions. vLLM needs Linux + CUDA, so it is left out here; use the cluster setup above for real runs. [uv](https://docs.astral.sh/uv/) downloads Python 3.11 for you, and `.venv/` is gitignored.
+
+```bash
+uv venv --python 3.11
+source .venv/bin/activate
+uv pip install transformers datasets pytest torch
+python -m pytest tests          # should print 26 passed
+```
+
+In VS Code, pick the `.venv` interpreter (Cmd+Shift+P → Python: Select Interpreter). Run `source .venv/bin/activate` in every new terminal.
+
 ## Data preparation
 
 The splits are committed in `data/splits/`, so everyone uses identical data. To regenerate them:
