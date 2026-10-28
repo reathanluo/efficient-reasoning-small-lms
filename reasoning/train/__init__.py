@@ -1,7 +1,7 @@
 """LoRA supervised fine-tuning (owner: Person B).
 
-Nothing is implemented yet. Whatever modules go here, the contracts below are
-what Persons A and C rely on.
+The starter implementation is `sft.py`; see scripts/train/README.md for the
+local checks and TC1 smoke job. The contracts below are what A and C rely on.
 
 Input
 -----
