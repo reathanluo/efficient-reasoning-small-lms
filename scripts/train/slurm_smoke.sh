@@ -17,6 +17,7 @@ source activate sc4001-g
 export HF_HOME="${HF_HOME:-$HOME/hf_cache}"
 export HF_HUB_OFFLINE=1
 export TOKENIZERS_PARALLELISM=false
+export PYTHONUNBUFFERED=1
 nvidia-smi
 python -m reasoning.train.sft --limit 64 --val-limit 16 --epochs 1 \
     --out "ckpt/human_05B_s0_smoke_${SLURM_JOB_ID}"

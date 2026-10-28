@@ -66,6 +66,48 @@ def pad_batch(features, pad_id):
     return batch
 
 
+def validate_rows(model, tokenizer, rows, batch_size, max_new_tokens, progress=None):
+    """Greedy, left-padded generation; restore training state even on failure."""
+    import torch
+
+    was_training = model.training
+    padding_side = tokenizer.padding_side
+    predictions = []
+    started = time.monotonic()
+    try:
+        model.eval()
+        tokenizer.padding_side = "left"
+        with torch.inference_mode():
+            for start in range(0, len(rows), batch_size):
+                batch_rows = rows[start:start + batch_size]
+                prompts = [chat_prompt(tokenizer, row["question"]) for row in batch_rows]
+                encoded = tokenizer(prompts, padding=True, add_special_tokens=False,
+                                    return_tensors="pt").to(model.device)
+                generated = model.generate(
+                    **encoded, do_sample=False, use_cache=True,
+                    max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
+                )
+                width = encoded["input_ids"].shape[1]
+                for row, sequence in zip(batch_rows, generated):
+                    tokens = sequence[width:].tolist()
+                    # Batched generate pads shorter completions after their EOS.
+                    if tokenizer.eos_token_id in tokens:
+                        tokens = tokens[:tokens.index(tokenizer.eos_token_id) + 1]
+                    text = tokenizer.decode(tokens, skip_special_tokens=True)
+                    pred, method = extract_pred(text)
+                    predictions.append({"id": row["id"], "gold": row["gold"], "text": text,
+                                        "correct": is_correct(pred, row["gold"]), "method": method,
+                                        "gen_tokens": len(tokens),
+                                        "finish_reason": "stop" if tokens and tokens[-1] == tokenizer.eos_token_id else "length"})
+                if progress:
+                    progress(len(predictions), len(rows), time.monotonic() - started)
+    finally:
+        tokenizer.padding_side = padding_side
+        model.train(was_training)
+    return predictions
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B")
@@ -73,6 +115,7 @@ def main():
     parser.add_argument("--out", default="ckpt/human_05B_s0_smoke")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--val-limit", type=int)
+    parser.add_argument("--val-batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--rank", type=int, choices=[8, 16, 32], default=8)
     parser.add_argument("--learning-rate", type=float, default=2e-4)
@@ -83,7 +126,7 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--check-data", action="store_true", help="Validate JSONL only; no model downloads")
     args = parser.parse_args()
-    for key in ("limit", "val_limit", "epochs", "batch_size", "grad_accum", "max_length", "max_new_tokens"):
+    for key in ("limit", "val_limit", "val_batch_size", "epochs", "batch_size", "grad_accum", "max_length", "max_new_tokens"):
         value = getattr(args, key)
         if value is not None and value <= 0:
             parser.error(f"--{key.replace('_', '-')} must be positive")
@@ -150,30 +193,25 @@ def main():
                 self.loss_sum += logs["loss"]
 
         def on_epoch_end(self, args, state, control, model=None, **kwargs):
-            was_training = model.training
-            model.eval()
-            predictions = []
-            with torch.inference_mode():
-                for row in val_rows:
-                    encoded = tokenizer(chat_prompt(tokenizer, row["question"]),
-                                        add_special_tokens=False, return_tensors="pt").to(model.device)
-                    generated = model.generate(**encoded, do_sample=False,
-                                               max_new_tokens=main_args.max_new_tokens,
-                                               pad_token_id=tokenizer.pad_token_id,
-                                               eos_token_id=tokenizer.eos_token_id)
-                    completion = generated[0, encoded["input_ids"].shape[1]:]
-                    text = tokenizer.decode(completion, skip_special_tokens=True)
-                    pred, method = extract_pred(text)
-                    predictions.append({"id": row["id"], "gold": row["gold"], "text": text,
-                                        "correct": is_correct(pred, row["gold"]), "method": method,
-                                        "gen_tokens": len(completion)})
-            model.train(was_training)
             epoch = round(state.epoch)
+            def progress(done, total, seconds):
+                log["stage"] = "validation"
+                log["validation_progress"] = {"epoch": epoch, "done": done, "total": total,
+                                              "seconds": round(seconds, 2)}
+                write_log()
+                print(f"Epoch {epoch}: validation {done}/{total} ({seconds:.1f}s)", flush=True)
+
+            print(f"Epoch {epoch}: starting validation on {len(val_rows)} questions", flush=True)
+            validation_started = time.monotonic()
+            predictions = validate_rows(model, tokenizer, val_rows, main_args.val_batch_size,
+                                        main_args.max_new_tokens, progress)
             (out / f"validation_epoch_{epoch}.jsonl").write_text(
                 "".join(json.dumps(row) + "\n" for row in predictions))
             accuracy = sum(row["correct"] for row in predictions) / len(predictions)
             log["epochs"].append({"epoch": epoch, "train_loss": self.loss_sum / max(1, self.steps),
-                                  "gsm8k_val_accuracy": accuracy, "global_step": state.global_step})
+                                  "gsm8k_val_accuracy": accuracy, "global_step": state.global_step,
+                                  "validation_seconds": round(time.monotonic() - validation_started, 2)})
+            log["stage"] = "training"
             print(f"Epoch {epoch}: validation accuracy={accuracy:.3f}", flush=True)
             self.loss_sum = 0.0
             self.steps = 0
@@ -193,7 +231,7 @@ def main():
             fp16=True, gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
             logging_strategy="steps", logging_steps=1, save_strategy="epoch", save_total_limit=2,
-            report_to="none", seed=args.seed, data_seed=args.seed,
+            report_to="none", seed=args.seed, data_seed=args.seed, label_names=["labels"],
         ), callbacks=[Validate()],
     )
     write_log()
@@ -201,6 +239,7 @@ def main():
     trainer.save_model(str(out))
     tokenizer.save_pretrained(str(out))
     log["status"] = "complete"
+    log["stage"] = "complete"
     log["history"] = trainer.state.log_history
     write_log()
     print(f"Adapter saved to {out}")

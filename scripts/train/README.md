@@ -17,7 +17,8 @@ python3 -m reasoning.train.sft --check-data --limit 64 --val-limit 16
 python3 -m unittest reasoning.train.test_sft -v
 ```
 
-Expected: 64 training examples, 16 validation examples, and three passing tests.
+Expected: 64 training examples and 16 validation examples. There are three
+dependency-free masking tests and three validation tests that require torch.
 The tests cover prompt masking, answer-only targets, preserving EOS when padding
 uses the same token, and refusing to truncate the answer.
 
@@ -100,3 +101,40 @@ fits the GPU. The initial 2048-token limit is a smoke-run starting point.
 validation accuracy, training history and elapsed time. Validation generations
 are retained separately. The saved root adapter is from the final epoch;
 choose the epoch budget on validation during tuning.
+
+## Faster validation and first tuning trials
+
+Validation uses `--val-batch-size 8` by default, left padding and generation KV
+caching. It prints progress after each batch and updates `train_log.json` with
+`stage` and `validation_progress`. The training collator still right-pads and
+masks prompt/padding labels. Validation restores model mode and tokenizer padding
+after generation, including on failure. The generation cap remains 512 tokens.
+The log records validation duration per epoch. GPU speed and real-model numerical
+parity still need verification on TC1; use `--val-batch-size 1` as a comparison.
+If GPU memory runs out, reduce this batch size consistently across tuning runs.
+
+First rerun the smoke job on the revised code (it uses a new job-specific output):
+
+```bash
+sbatch scripts/train/slurm_smoke.sh
+```
+
+Then start the staged sweep described in `configs/tuning-plan.md`. For example,
+these are two independent learning-rate trials, submitted separately:
+
+```bash
+sbatch scripts/train/slurm_trial.sh 0.00005 8 1
+sbatch scripts/train/slurm_trial.sh 0.0001 8 1
+```
+
+Arguments are learning rate, rank and epochs. Each trial uses full human-solution
+training and full validation, and saves to `ckpt/human_05B_s0_trial_<jobid>/`.
+Submit at most two jobs at a time under the documented QoS. After one finishes,
+the third learning-rate trial is `sbatch scripts/train/slurm_trial.sh 0.0002 8 1`.
+This repeats the reference setting under the revised validation implementation.
+Only proceed to rank/epoch selection after inspecting the learning-rate results.
+
+Do not reinstall the unbounded requirements over a working environment. The
+recorded TC1 environment is `configs/tc1-smoke-packages.txt`; the working data
+stack was NumPy 1.26.4, PyArrow 19.0.1 and datasets 3.3.2. These are setup notes,
+not a change to the shared requirements file.
