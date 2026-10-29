@@ -9,3 +9,4 @@ datasets>=2.20
 peft==0.14.0
 accelerate>=0.33,<1.5
 pytest
+setuptools          # triton (used by vLLM) imports it at start-up; uv venvs don't include it

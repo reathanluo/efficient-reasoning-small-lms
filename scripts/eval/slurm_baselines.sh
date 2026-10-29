@@ -23,9 +23,14 @@ set -euo pipefail
 
 cd "$SLURM_SUBMIT_DIR"
 
-# The conda environment created per README.md ("Setup on the TC1 cluster").
-module load anaconda
-source activate sc4001-g
+# A uv .venv in the repo (README "Setup on the TC1 cluster"), or the older conda env.
+if [[ -f .venv/bin/activate ]]; then
+  module load uv
+  source .venv/bin/activate
+else
+  module load anaconda
+  source activate sc4001-g
+fi
 
 # Models are downloaded beforehand on the head node; read them from that cache
 # and never download inside the job.

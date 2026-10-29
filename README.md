@@ -47,7 +47,7 @@ Everyone can read and run anything. To change a folder you don't own, open a pul
 **Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
 
 1. **This week:** set up the TC1 environment (below), confirm your QoS with `MyTCinfo`, and submit `scripts/eval/slurm_baselines.sh` to run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
-2. Evaluate each of B's adapters on `gsm8k_val`: greedy, and 16 samples for self-consistency.
+2. Evaluate each of B's adapters on `gsm8k_val` with `sbatch scripts/eval/slurm_students.sh gsm8k_val`: greedy, and 16 samples for self-consistency, with a 4,096-token cap so long-style students are not cut off by our setting. Copy each finished batch's `*.scored.jsonl` into `results/scored/` for Person A's H4 analysis.
 3. From 9 Nov, do the final runs on `gsm8k_test`, `svamp` and `gsm_symbolic` with the frozen settings.
 4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
 5. **Report:** Experiments and Results.
@@ -112,12 +112,14 @@ From the TC1 user guide (Feb 2026). TC1 is reachable only from the NTU network: 
 
 ```bash
 ssh <ntu-id>@10.96.189.11
-git clone https://github.com/reathanluo/sc4001-group-project.git && cd sc4001-group-project
-module load anaconda
-conda create -n sc4001-g python=3.11 -y
-source activate sc4001-g
-pip install -r requirements.txt          # vLLM only installs via pip
+git clone git@github.com:reathanluo/sc4001-group-project.git && cd sc4001-group-project
+module load uv
+uv venv --seed --python 3.11 .venv       # the job scripts use .venv/ when it exists
+source .venv/bin/activate
+export UV_CACHE_DIR=/tmp/uv-cache-$USER UV_LINK_MODE=copy   # home storage has no file locks
+uv pip install -r requirements.txt
 python -m pytest tests                   # must print 26 passed
+python -c "import vllm, torch; print(vllm.__version__, torch.__version__)"   # 0.7.3 2.5.1
 
 # Download the models once on the head node; jobs read them offline.
 export HF_HOME=$HOME/hf_cache
@@ -126,6 +128,8 @@ for m in Qwen/Qwen2.5-0.5B Qwen/Qwen2.5-0.5B-Instruct Qwen/Qwen2.5-1.5B Qwen/Qwe
   huggingface-cli download $m            # newer huggingface_hub: hf download $m
 done
 ```
+
+Use uv, not conda: on TC1 (27–29 Oct), `conda create` fails while unpacking `ncurses` with `Too many levels of symbolic links`. After that, `pip install` silently falls back to the shared Python 3.14, which vLLM 0.7.3's `numba` refuses. Run `source .venv/bin/activate` in every new session before using `python`. Cloning over SSH needs TC1's own key (`cat ~/.ssh/id_ecdsa.pub`) added to your GitHub account.
 
 **Run a job:**
 
@@ -178,7 +182,8 @@ python -m reasoning.data --out data/splits
 ## Running evaluation
 
 ```bash
-sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node
+sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node: untrained baselines, 1,024-token cap
+sbatch scripts/eval/slurm_students.sh gsm8k_val   # trained LoRA students in ckpt/, 4,096-token cap
 bash scripts/eval/run_baselines.sh gsm8k_val  # or interactively on a GPU node
 
 python -m reasoning.eval.generate --model Qwen/Qwen2.5-1.5B-Instruct --prompt chat \
