@@ -3,7 +3,8 @@
     python -m reasoning.eval.evaluate runs/base05_fewshot_greedy.jsonl [more.jsonl ...]
 
 For each run it writes
-  <run>.scored.jsonl : per-question parsed answers and scores (for paired tests)
+  <run>.scored.jsonl : per-question parsed answers, scores, and per-sample token
+                       counts and finish reasons (for paired tests and H4)
   <run>.summary.json : aggregate metrics (one row of the results table)
 
 Cost accounting (state this in the report):
@@ -74,8 +75,12 @@ def score_run(path: Path) -> Dict:
         scored.append({
             "id": r["id"],
             "gold": r["gold"],
+            # Per-sample lists, in sampling order, so analyses such as adaptive
+            # voting (H4) can replay early stopping from the committed scored file.
             "preds": preds,
             "correct": [is_correct(p, r["gold"]) for p in preds],
+            "gen_tokens": gen,
+            "finish": [s["finish_reason"] for s in r["samples"]],
             "maj": {str(k): maj_at_k(preds, r["gold"], k, rng) for k in ks},
             "mean_gen_tokens": sum(gen) / n,
             "prompt_tokens": r["prompt_tokens"],

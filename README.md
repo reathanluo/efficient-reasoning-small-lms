@@ -47,7 +47,7 @@ Everyone can read and run anything. To change a folder you don't own, open a pul
 **Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
 
 1. **This week:** set up the TC1 environment (below), confirm your QoS with `MyTCinfo`, and submit `scripts/eval/slurm_baselines.sh` to run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
-2. Evaluate each of B's adapters on `gsm8k_val`: greedy, and 16 samples for self-consistency.
+2. Evaluate each of B's adapters on `gsm8k_val` with `sbatch scripts/eval/slurm_students.sh gsm8k_val`: greedy, and 16 samples for self-consistency, with a 4,096-token cap so long-style students are not cut off by our setting. Copy each finished batch's `*.scored.jsonl` into `results/scored/` for Person A's H4 analysis.
 3. From 9 Nov, do the final runs on `gsm8k_test`, `svamp` and `gsm_symbolic` with the frozen settings.
 4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
 5. **Report:** Experiments and Results.
@@ -178,7 +178,8 @@ python -m reasoning.data --out data/splits
 ## Running evaluation
 
 ```bash
-sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node
+sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node: untrained baselines, 1,024-token cap
+sbatch scripts/eval/slurm_students.sh gsm8k_val   # trained LoRA students in ckpt/, 4,096-token cap
 bash scripts/eval/run_baselines.sh gsm8k_val  # or interactively on a GPU node
 
 python -m reasoning.eval.generate --model Qwen/Qwen2.5-1.5B-Instruct --prompt chat \
