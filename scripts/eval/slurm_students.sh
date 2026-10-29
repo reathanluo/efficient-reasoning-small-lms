@@ -24,8 +24,14 @@ set -euo pipefail
 
 cd "$SLURM_SUBMIT_DIR"
 
-module load anaconda
-source activate sc4001-g
+# A uv .venv in the repo (README "Setup on the TC1 cluster"), or the older conda env.
+if [[ -f .venv/bin/activate ]]; then
+  module load uv
+  source .venv/bin/activate
+else
+  module load anaconda
+  source activate sc4001-g
+fi
 
 export HF_HOME="${HF_HOME:-$HOME/hf_cache}"
 export HF_HUB_OFFLINE=1
