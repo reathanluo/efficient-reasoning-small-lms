@@ -114,8 +114,9 @@ From the TC1 user guide (Feb 2026). TC1 is reachable only from the NTU network: 
 ssh <ntu-id>@10.96.189.11
 git clone git@github.com:reathanluo/sc4001-group-project.git && cd sc4001-group-project
 module load uv
-uv venv --python 3.11 .venv              # the job scripts use .venv/ when it exists
+uv venv --seed --python 3.11 .venv       # the job scripts use .venv/ when it exists
 source .venv/bin/activate
+export UV_CACHE_DIR=/tmp/uv-cache-$USER UV_LINK_MODE=copy   # home storage has no file locks
 uv pip install -r requirements.txt
 python -m pytest tests                   # must print 26 passed
 python -c "import vllm, torch; print(vllm.__version__, torch.__version__)"   # 0.7.3 2.5.1
