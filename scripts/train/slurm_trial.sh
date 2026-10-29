@@ -25,5 +25,5 @@ trial_rank="${2:-8}"
 trial_epochs="${3:-1}"
 nvidia-smi
 python -m reasoning.train.sft --learning-rate "$trial_lr" --rank "$trial_rank" \
-    --epochs "$trial_epochs" --val-batch-size "${VAL_BATCH_SIZE:-8}" \
+    --epochs "$trial_epochs" --val-batch-size "${VAL_BATCH_SIZE:-1}" \
     --out "ckpt/human_05B_s0_trial_${SLURM_JOB_ID}"

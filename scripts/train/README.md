@@ -1,5 +1,14 @@
 # Training job scripts (owner: Person B)
 
+**29 October validation audit:** do not use the batch-eight training-validation
+scores for hyperparameter selection. Job 70493 scored the same adapter at 50.8%
+with single/no-cache HF, 50.6% with single/cached HF, 46.8% with batch-eight HF,
+and 50.8% with vLLM. The root cause remains unverified. Defaults now use batch
+size one. The batching description later in this document records the earlier
+implementation, not the current default. Run `sbatch scripts/train/slurm_rescore_trials.sh`
+to score the four saved trial adapters and a matched untrained baseline using
+the same vLLM protocol. This job does no training. See `configs/tuning-plan.md`.
+
 SLURM scripts that train the LoRA adapters into `ckpt/`. See `reasoning/train/__init__.py` for the output format.
 
 ## Start here: one smoke run

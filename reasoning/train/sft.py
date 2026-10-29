@@ -115,7 +115,8 @@ def main():
     parser.add_argument("--out", default="ckpt/human_05B_s0_smoke")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--val-limit", type=int)
-    parser.add_argument("--val-batch-size", type=int, default=8)
+    parser.add_argument("--val-batch-size", type=int, default=1,
+                        help="Keep 1 for tuning: batch 8 changed validation answers on TC1")
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--rank", type=int, choices=[8, 16, 32], default=8)
     parser.add_argument("--learning-rate", type=float, default=2e-4)

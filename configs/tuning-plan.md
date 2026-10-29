@@ -1,5 +1,26 @@
 # Provisional tuning plan (not frozen settings)
 
+## Validation audit, 29 October (job 70493)
+
+On the same original adapter and all 500 questions: single/no-cache HF scored
+50.8%, single/cached HF 50.6%, batch-eight/cached HF 46.8%, and vLLM 50.8%.
+Batch-eight changed correctness on 24 questions relative to single/no-cache;
+single/cached changed correctness on five. Equal aggregate accuracies do not
+establish per-question agreement. The precise source of the numerical/output
+differences has not been established. Do not use batch-eight scores to select
+hyperparameters or assume the existing trial ranking survives rescoring.
+
+Training validation now defaults to batch size one. Use the existing vLLM
+evaluation path with a fixed 512-token cap to rescore ALL four saved trials and
+a matched untrained chat baseline, without retraining:
+
+```bash
+sbatch scripts/train/slurm_rescore_trials.sh
+```
+
+The earlier batch-eight plan below is historical; this audit supersedes its
+batch-size guidance. Single-question HF validation is slow; budget accordingly.
+
 The completed development run used Qwen2.5-0.5B, human GSM8K solutions,
 rank 8, learning rate 0.0002, one epoch, seed 0, effective batch size 8,
 sequence limit 2048, and greedy validation capped at 512 new tokens.
