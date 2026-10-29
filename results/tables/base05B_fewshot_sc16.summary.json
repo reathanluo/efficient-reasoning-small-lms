@@ -1,0 +1,76 @@
+{
+  "run": "base05B_fewshot_sc16",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "lora": null,
+  "prompt": "fewshot",
+  "split": "gsm8k_val",
+  "n_questions": 500,
+  "n_samples": 16,
+  "temperature": 0.7,
+  "n_params": 494032768,
+  "sample_acc": 0.33825,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.33825,
+      "ci95": [
+        0.311875,
+        0.365875
+      ],
+      "gen_tokens": 98.4835,
+      "flops": 1139638247451.7761
+    },
+    {
+      "k": 2,
+      "acc": 0.3384499999999999,
+      "ci95": [
+        0.31096666666666645,
+        0.36741666666666656
+      ],
+      "gen_tokens": 196.967,
+      "flops": 1236946399666.4321
+    },
+    {
+      "k": 4,
+      "acc": 0.423453125,
+      "ci95": [
+        0.390265625,
+        0.457859375
+      ],
+      "gen_tokens": 393.934,
+      "flops": 1431562704095.7441
+    },
+    {
+      "k": 8,
+      "acc": 0.500734375,
+      "ci95": [
+        0.46409375,
+        0.537953125
+      ],
+      "gen_tokens": 787.868,
+      "flops": 1820795312954.368
+    },
+    {
+      "k": 16,
+      "acc": 0.558,
+      "ci95": [
+        0.516,
+        0.602
+      ],
+      "gen_tokens": 1575.736,
+      "flops": 2599260530671.6157
+    }
+  ],
+  "mean_gen_tokens_per_sample": 98.4835,
+  "mean_prompt_tokens": 1054.92,
+  "truncation_rate": 0.00525,
+  "extraction_methods": {
+    "hash": 0.9655,
+    "answer_is": 0.020625,
+    "last_number": 0.013625,
+    "none": 0.000125,
+    "boxed": 0.000125
+  },
+  "mean_unique_answers": 8.796,
+  "wall_seconds": 323.48
+}
