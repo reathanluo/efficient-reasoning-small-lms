@@ -66,7 +66,7 @@ def pad_batch(features, pad_id):
     return batch
 
 
-def validate_rows(model, tokenizer, rows, batch_size, max_new_tokens, progress=None):
+def validate_rows(model, tokenizer, rows, batch_size, max_new_tokens, progress=None, use_cache=True):
     """Greedy, left-padded generation; restore training state even on failure."""
     import torch
 
@@ -84,7 +84,7 @@ def validate_rows(model, tokenizer, rows, batch_size, max_new_tokens, progress=N
                 encoded = tokenizer(prompts, padding=True, add_special_tokens=False,
                                     return_tensors="pt").to(model.device)
                 generated = model.generate(
-                    **encoded, do_sample=False, use_cache=True,
+                    **encoded, do_sample=False, use_cache=use_cache,
                     max_new_tokens=max_new_tokens, pad_token_id=tokenizer.pad_token_id,
                     eos_token_id=tokenizer.eos_token_id,
                 )

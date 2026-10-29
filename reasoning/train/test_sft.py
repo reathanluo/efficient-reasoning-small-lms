@@ -2,6 +2,7 @@
 import unittest
 
 from .sft import encode_row, pad_batch, validate_rows
+from .check_validation import compare
 
 
 class Tokenizer:
@@ -15,6 +16,18 @@ class Tokenizer:
 
 
 class CompletionTests(unittest.TestCase):
+    def test_comparison_distinguishes_wording_answer_and_correctness(self):
+        first = [{"id": "a", "text": "#### 2", "correct": True},
+                 {"id": "b", "text": "#### 3", "correct": False}]
+        second = [{"id": "a", "text": "Work\n#### 2", "correct": True},
+                  {"id": "b", "text": "#### 4", "correct": True}]
+        result = compare(first, second)
+        self.assertEqual(result["text_disagreements"], 2)
+        self.assertEqual(result["answer_disagreements"], 1)
+        self.assertEqual(result["correctness_disagreement_ids"], ["b"])
+        with self.assertRaises(ValueError):
+            compare(first, second[::-1])
+
     def test_prompt_mask_and_eos(self):
         item = encode_row({"question": "1+1?", "solution": "Add one.", "gold": "2"}, Tokenizer(), 1000)
         labels = [token for token in item["labels"] if token != -100]
