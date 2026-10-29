@@ -1,7 +1,10 @@
 """Teacher data: rationale generation and the four SFT datasets (owner: Person A).
 
-Nothing is implemented yet. Whatever modules go here, the OUTPUT CONTRACT below is
-what Person B's training code reads, so keep to it or agree a change first.
+Modules: generate.py (teacher sampling), filter.py (rejection sampling),
+compress.py (long -> concise), build.py (the four files and stats.json). The
+commands that produced data/sft/ are in scripts/teacher/README.md. The OUTPUT
+CONTRACT below is what Person B's training code reads, so keep to it or agree a
+change first.
 
 Input
 -----
