@@ -1,7 +1,10 @@
 """Local invariant checks: python -m unittest reasoning.train.test_sft -v."""
 import unittest
+import json
+import tempfile
+from pathlib import Path
 
-from .sft import check_training_metrics, encode_row, pad_batch, validate_rows
+from .sft import check_training_metrics, encode_row, load_resume_log, pad_batch, validate_rows
 from .check_validation import compare
 from .prepare_long_probe import select_indices
 
@@ -17,6 +20,33 @@ class Tokenizer:
 
 
 class CompletionTests(unittest.TestCase):
+    def test_resume_checks_inputs_config_and_checkpoint_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            checkpoint = out / "checkpoint-4"
+            checkpoint.mkdir()
+            config = {"precision": "float32", "epochs": 1}
+            hashes = {"train": "train-hash", "validation": "val-hash"}
+            log = {"config": config, "data_sha256": hashes, "status": "failed",
+                   "epochs": [{"epoch": 1, "global_step": 8}], "error": "old error"}
+            (out / "train_log.json").write_text(json.dumps(log))
+            for name in ("optimizer.pt", "scheduler.pt", "rng_state.pth", "adapter_config.json",
+                         "adapter_model.safetensors"):
+                (checkpoint / name).touch()
+            (checkpoint / "trainer_state.json").write_text('{"global_step": 4}')
+            resumed = load_resume_log(out, checkpoint, config, hashes)
+            self.assertEqual(resumed["status"], "running")
+            self.assertEqual(resumed["epochs"], [])
+            self.assertNotIn("error", resumed)
+            self.assertEqual(resumed["resume_events"][-1]["global_step"], 4)
+            with self.assertRaisesRegex(ValueError, "changed epochs"):
+                load_resume_log(out, checkpoint, {**config, "epochs": 2}, hashes)
+            with self.assertRaisesRegex(ValueError, "hashes"):
+                load_resume_log(out, checkpoint, config, {"train": "different"})
+            (checkpoint / "optimizer.pt").unlink()
+            with self.assertRaisesRegex(ValueError, "Incomplete checkpoint"):
+                load_resume_log(out, checkpoint, config, hashes)
+
     def test_long_probe_contains_actual_max_and_eight_distinct_examples(self):
         lengths = [20, 1000, 30, 4039] + list(range(100, 200))
         indices = select_indices(lengths)

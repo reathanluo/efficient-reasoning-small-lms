@@ -1,5 +1,37 @@
 # Training job scripts (owner: Person B)
 
+## Full teacher pilot and recovery
+
+Before relying on recovery, run `sbatch scripts/train/slurm_resume_smoke.sh`.
+It trains a tiny FP32 adapter, resumes its step-4 checkpoint, and checks that
+the completed weights match the uninterrupted run within a small tolerance.
+The job must print `RESUME CHECK PASSED` and exit successfully on TC1. Local unit
+tests verify resume guards; they do not replace this real GPU integration test.
+
+Then run `sbatch scripts/train/slurm_teacher_pilot.sh` (or submit it with an
+`afterok` dependency on the recovery test). The pilot uses all 6547 long examples,
+Qwen2.5-1.5B, FP32, rank 8, LR 0.0001, one epoch, sequence limit 4096, effective
+batch size 8, and full 500-question greedy validation. Settings remain provisional.
+It saves to `ckpt/long_15B_s0_pilot_<jobid>` and keeps the latest two periodic
+Trainer checkpoints, every 100 updates, plus an epoch-end checkpoint. Checkpoints
+include optimizer/scheduler/RNG state, not just adapter weights. The six-hour
+limit may still interrupt a slow run; no automatic resubmission is installed.
+
+To recover, inspect `checkpoint-*` under the ORIGINAL output folder, choose the
+latest complete checkpoint, and submit:
+
+```bash
+sbatch scripts/train/slurm_teacher_pilot.sh ORIGINAL_OUTPUT CHECKPOINT_PATH
+```
+
+Keep all settings and input files unchanged. Resume checks the input SHA-256
+hashes, configuration and checkpoint files before loading the model. It is enabled
+for new runs that recorded hashes; old pre-hash runs are intentionally rejected.
+Training epoch losses are recomputed from restored step history, and earlier
+validation entries past the checkpoint are discarded/replaced if repeated.
+Wall time accumulates recorded time across attempts, excluding queue waits;
+hard termination can leave time since the last log write unrecorded.
+
 ## Long-style memory-fit job
 
 Audit 70801 found a full-sequence maximum of 4039 tokens for both students;

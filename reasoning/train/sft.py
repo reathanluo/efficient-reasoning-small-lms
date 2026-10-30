@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import time
@@ -18,6 +19,38 @@ def check_training_metrics(metrics):
                 f"Non-finite {name}: {metrics[name]}. Stop this run; "
                 "check precision and model/data before continuing."
             )
+
+
+def load_resume_log(out, checkpoint, config, data_hashes):
+    """Reject incomplete checkpoints, changed inputs, and incompatible settings."""
+    out, checkpoint = Path(out), Path(checkpoint)
+    if checkpoint.resolve().parent != out.resolve():
+        raise ValueError("Resume checkpoint must be directly inside --out")
+    required = ("trainer_state.json", "optimizer.pt", "scheduler.pt", "rng_state.pth",
+                "adapter_config.json", "adapter_model.safetensors")
+    missing = [name for name in required if not (checkpoint / name).is_file()]
+    if config["precision"] == "float16" and not (checkpoint / "scaler.pt").is_file():
+        missing.append("scaler.pt")
+    if missing:
+        raise ValueError(f"Incomplete checkpoint: missing {missing}")
+    log = json.loads((out / "train_log.json").read_text())
+    immutable = ("model", "train_file", "limit", "val_limit", "val_batch_size", "epochs",
+                 "rank", "learning_rate", "precision", "batch_size", "grad_accum",
+                 "max_length", "max_new_tokens", "seed")
+    for key in immutable:
+        if log["config"].get(key) != config.get(key):
+            raise ValueError(f"Cannot resume with changed {key}")
+    if log.get("data_sha256") != data_hashes:
+        raise ValueError("Input hashes differ or are missing; do not resume changed data")
+    state = json.loads((checkpoint / "trainer_state.json").read_text())
+    log["epochs"] = [row for row in log["epochs"] if row["global_step"] <= state["global_step"]]
+    log.setdefault("resume_events", []).append({"checkpoint": str(checkpoint),
+                                               "global_step": state["global_step"]})
+    log.pop("error", None)
+    log.pop("validation_progress", None)
+    log["status"] = "running"
+    log["stage"] = "training"
+    return log
 
 
 def read_rows(path):
@@ -137,9 +170,11 @@ def main():
     parser.add_argument("--max-length", type=int, default=2048)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--save-steps", type=int, help="Also checkpoint every N optimizer steps")
+    parser.add_argument("--resume-from-checkpoint", help="Complete Trainer checkpoint under --out")
     parser.add_argument("--check-data", action="store_true", help="Validate JSONL only; no model downloads")
     args = parser.parse_args()
-    for key in ("limit", "val_limit", "val_batch_size", "epochs", "batch_size", "grad_accum", "max_length", "max_new_tokens"):
+    for key in ("limit", "val_limit", "val_batch_size", "epochs", "batch_size", "grad_accum", "max_length", "max_new_tokens", "save_steps"):
         value = getattr(args, key)
         if value is not None and value <= 0:
             parser.error(f"--{key.replace('_', '-')} must be positive")
@@ -154,8 +189,16 @@ def main():
     if args.check_data:
         return
     out = Path(args.out)
-    if out.exists() and any(out.iterdir()):
+    if not args.resume_from_checkpoint and out.exists() and any(out.iterdir()):
         parser.error(f"Output directory is not empty: {out}; choose a new --out")
+    hashes = {"train": hashlib.sha256(Path(args.train_file).read_bytes()).hexdigest(),
+              "validation": hashlib.sha256(Path("data/splits/gsm8k_val.jsonl").read_bytes()).hexdigest()}
+    resume_log = None
+    if args.resume_from_checkpoint:
+        try:
+            resume_log = load_resume_log(out, args.resume_from_checkpoint, vars(args), hashes)
+        except (ValueError, OSError, KeyError) as error:
+            parser.error(str(error))
 
     import torch
     from peft import LoraConfig, get_peft_model
@@ -185,27 +228,25 @@ def main():
     model.print_trainable_parameters()
     out.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
-    log = {"config": vars(args), "n_train": len(dataset), "n_val": len(val_rows),
-           "epochs": [], "status": "running", "validation_predictions": "validation_epoch_*.jsonl"}
+    log = resume_log if resume_log is not None else {
+        "config": vars(args), "n_train": len(dataset), "n_val": len(val_rows),
+        "data_sha256": hashes, "epochs": [], "status": "running", "stage": "training",
+        "validation_predictions": "validation_epoch_*.jsonl"}
+    previous_wall = log.get("wall_seconds", 0)
 
     def write_log():
-        log["wall_seconds"] = round(time.monotonic() - started, 2)
+        log["wall_seconds"] = round(previous_wall + time.monotonic() - started, 2)
         temporary = out / "train_log.json.tmp"
         temporary.write_text(json.dumps(log, indent=2) + "\n")
         temporary.replace(out / "train_log.json")
 
     class Validate(TrainerCallback):
-        def __init__(self):
-            self.loss_sum = 0.0
-            self.steps = 0
-
-        def on_step_end(self, args, state, control, **kwargs):
-            self.steps += 1
-
         def on_log(self, args, state, control, logs=None, **kwargs):
             check_training_metrics(logs or {})
-            if logs and "loss" in logs:
-                self.loss_sum += logs["loss"]
+
+        def on_save(self, args, state, control, **kwargs):
+            log["last_checkpoint"] = str(out / f"checkpoint-{state.global_step}")
+            write_log()
 
         def on_epoch_end(self, args, state, control, model=None, **kwargs):
             epoch = round(state.epoch)
@@ -223,13 +264,16 @@ def main():
             (out / f"validation_epoch_{epoch}.jsonl").write_text(
                 "".join(json.dumps(row) + "\n" for row in predictions))
             accuracy = sum(row["correct"] for row in predictions) / len(predictions)
-            log["epochs"].append({"epoch": epoch, "train_loss": self.loss_sum / max(1, self.steps),
+            # Trainer restores log_history on resume, including earlier steps in this epoch.
+            losses = [item["loss"] for item in state.log_history
+                      if "loss" in item and epoch - 1 < item.get("epoch", -1) <= epoch + 1e-6]
+            log["epochs"] = [item for item in log["epochs"] if item["epoch"] != epoch]
+            log["epochs"].append({"epoch": epoch, "train_loss": sum(losses) / max(1, len(losses)),
                                   "gsm8k_val_accuracy": accuracy, "global_step": state.global_step,
                                   "validation_seconds": round(time.monotonic() - validation_started, 2)})
             log["stage"] = "training"
             print(f"Epoch {epoch}: validation accuracy={accuracy:.3f}", flush=True)
-            self.loss_sum = 0.0
-            self.steps = 0
+            control.should_save = True
             write_log()
 
     def collate(features):
@@ -245,7 +289,9 @@ def main():
             gradient_accumulation_steps=args.grad_accum, learning_rate=args.learning_rate,
             fp16=args.precision == "float16", gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
-            logging_strategy="steps", logging_steps=1, save_strategy="epoch", save_total_limit=2,
+            logging_strategy="steps", logging_steps=1,
+            save_strategy="steps" if args.save_steps else "epoch",
+            save_steps=args.save_steps or 500, save_total_limit=2,
             logging_nan_inf_filter=False,
             report_to="none", seed=args.seed, data_seed=args.seed, label_names=["labels"],
         ), callbacks=[Validate()],
@@ -253,7 +299,7 @@ def main():
     write_log()
     torch.cuda.reset_peak_memory_stats()
     try:
-        trainer.train()
+        trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     except Exception as error:
         log["status"] = "failed"
         log["stage"] = "failed"
