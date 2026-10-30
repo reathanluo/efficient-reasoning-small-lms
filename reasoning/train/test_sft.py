@@ -1,7 +1,7 @@
 """Local invariant checks: python -m unittest reasoning.train.test_sft -v."""
 import unittest
 
-from .sft import encode_row, pad_batch, validate_rows
+from .sft import check_training_metrics, encode_row, pad_batch, validate_rows
 from .check_validation import compare
 
 
@@ -16,6 +16,14 @@ class Tokenizer:
 
 
 class CompletionTests(unittest.TestCase):
+    def test_invalid_training_metrics_are_rejected(self):
+        for metrics in ({"loss": float("nan")}, {"grad_norm": float("inf")},
+                        {"loss": 0.0, "grad_norm": float("nan")}):
+            with self.assertRaises(FloatingPointError):
+                check_training_metrics(metrics)
+        check_training_metrics({"loss": 0.5, "grad_norm": 1.2})
+        check_training_metrics({"train_runtime": 10})
+
     def test_comparison_distinguishes_wording_answer_and_correctness(self):
         first = [{"id": "a", "text": "#### 2", "correct": True},
                  {"id": "b", "text": "#### 3", "correct": False}]

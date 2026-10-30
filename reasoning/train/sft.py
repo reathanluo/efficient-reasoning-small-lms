@@ -3,11 +3,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from pathlib import Path
 
 from ..answer import extract_pred, is_correct
 from ..prompts import chat_prompt, format_target
+
+
+def check_training_metrics(metrics):
+    for name in ("loss", "grad_norm"):
+        if name in metrics and not math.isfinite(float(metrics[name])):
+            raise FloatingPointError(
+                f"Non-finite {name}: {metrics[name]}. Stop this run; "
+                "check precision and model/data before continuing."
+            )
 
 
 def read_rows(path):
@@ -120,6 +130,8 @@ def main():
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--rank", type=int, choices=[8, 16, 32], default=8)
     parser.add_argument("--learning-rate", type=float, default=2e-4)
+    parser.add_argument("--precision", choices=["float16", "float32"], default="float16",
+                        help="Use float32 to diagnose non-finite FP16 training on V100")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--max-length", type=int, default=2048)
@@ -161,7 +173,8 @@ def main():
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     dataset = [encode_row(row, tokenizer, args.max_length) for row in train_rows]
-    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.float16,
+    model_dtype = torch.float16 if args.precision == "float16" else torch.float32
+    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=model_dtype,
                                                 attn_implementation="eager")
     model.config.use_cache = False
     model = get_peft_model(model, LoraConfig(
@@ -190,6 +203,7 @@ def main():
             self.steps += 1
 
         def on_log(self, args, state, control, logs=None, **kwargs):
+            check_training_metrics(logs or {})
             if logs and "loss" in logs:
                 self.loss_sum += logs["loss"]
 
@@ -229,14 +243,22 @@ def main():
             output_dir=str(out), num_train_epochs=args.epochs,
             per_device_train_batch_size=args.batch_size,
             gradient_accumulation_steps=args.grad_accum, learning_rate=args.learning_rate,
-            fp16=True, gradient_checkpointing=True,
+            fp16=args.precision == "float16", gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
             logging_strategy="steps", logging_steps=1, save_strategy="epoch", save_total_limit=2,
+            logging_nan_inf_filter=False,
             report_to="none", seed=args.seed, data_seed=args.seed, label_names=["labels"],
         ), callbacks=[Validate()],
     )
     write_log()
-    trainer.train()
+    try:
+        trainer.train()
+    except Exception as error:
+        log["status"] = "failed"
+        log["stage"] = "failed"
+        log["error"] = f"{type(error).__name__}: {error}"
+        write_log()
+        raise
     trainer.save_model(str(out))
     tokenizer.save_pretrained(str(out))
     log["status"] = "complete"

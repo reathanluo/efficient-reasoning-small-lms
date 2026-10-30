@@ -1,5 +1,16 @@
 # Training job scripts (owner: Person B)
 
+**30 October 1.5B diagnostic:** job 70517 logged NaN gradient norms at all
+eight steps, zero logged loss, no learning-rate decay, and 0/16 validation.
+Do not use its adapter as a trained result. Trainer's default non-finite loss
+logging filter can hide invalid losses; the script now disables that filter,
+rejects non-finite loss/gradient metrics and records `status: failed` on training
+exceptions. FP16 instability is a hypothesis, not an established root cause.
+`sbatch scripts/train/slurm_smoke15_fp32.sh` repeats the same tiny setup in FP32,
+including FP32 base weights and disabled FP16 mixed precision. This requires more
+memory and may run slower. Do not freeze precision choices until the diagnostic
+and a comparable 0.5B check pass; report any precision difference across sizes.
+
 **29 October validation audit:** do not use the batch-eight training-validation
 scores for hyperparameter selection. Job 70493 scored the same adapter at 50.8%
 with single/no-cache HF, 50.6% with single/cached HF, 46.8% with batch-eight HF,
