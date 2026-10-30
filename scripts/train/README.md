@@ -1,5 +1,19 @@
 # Training job scripts (owner: Person B)
 
+## Long-style memory-fit job
+
+Audit 70801 found a full-sequence maximum of 4039 tokens for both students;
+708/6547 long examples exceeded 2048. Use 4096 as the candidate common limit.
+After updating the checkout, run `sbatch scripts/train/slurm_long_fit.sh`.
+It selects eight examples spanning lengths (including the global maximum),
+then trains 1.5B and 0.5B sequentially in FP32 with the candidate LR/rank.
+Each diagnostic performs one accumulated optimizer update and validates on four
+questions. This is a memory/numerical smoke test, not an accuracy estimate or
+reliable full-run timing estimate. Trainer may shuffle the eight selected rows;
+the longest is guaranteed to be in the subset, not first in training order.
+Peak PyTorch allocated/reserved memory is recorded in each training log; it
+does not measure all driver/non-PyTorch GPU memory. No final dataset is changed.
+
 ## Preflight before final teacher-data runs
 
 Submit these independent checks only when your assigned queue limits allow:

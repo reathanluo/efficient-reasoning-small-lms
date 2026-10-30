@@ -3,6 +3,7 @@ import unittest
 
 from .sft import check_training_metrics, encode_row, pad_batch, validate_rows
 from .check_validation import compare
+from .prepare_long_probe import select_indices
 
 
 class Tokenizer:
@@ -16,6 +17,14 @@ class Tokenizer:
 
 
 class CompletionTests(unittest.TestCase):
+    def test_long_probe_contains_actual_max_and_eight_distinct_examples(self):
+        lengths = [20, 1000, 30, 4039] + list(range(100, 200))
+        indices = select_indices(lengths)
+        self.assertEqual(indices[0], 3)
+        self.assertEqual(len(indices), 8)
+        self.assertEqual(len(set(indices)), 8)
+        self.assertEqual(min(lengths[i] for i in indices), 20)
+
     def test_invalid_training_metrics_are_rejected(self):
         for metrics in ({"loss": float("nan")}, {"grad_norm": float("inf")},
                         {"loss": 0.0, "grad_norm": float("nan")}):

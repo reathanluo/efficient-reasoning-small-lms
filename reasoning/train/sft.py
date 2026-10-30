@@ -251,14 +251,18 @@ def main():
         ), callbacks=[Validate()],
     )
     write_log()
+    torch.cuda.reset_peak_memory_stats()
     try:
         trainer.train()
     except Exception as error:
         log["status"] = "failed"
         log["stage"] = "failed"
         log["error"] = f"{type(error).__name__}: {error}"
+        log["peak_torch_allocated_gib"] = round(torch.cuda.max_memory_allocated() / 1024**3, 3)
         write_log()
         raise
+    log["peak_torch_allocated_gib"] = round(torch.cuda.max_memory_allocated() / 1024**3, 3)
+    log["peak_torch_reserved_gib"] = round(torch.cuda.max_memory_reserved() / 1024**3, 3)
     trainer.save_model(str(out))
     tokenizer.save_pretrained(str(out))
     log["status"] = "complete"
@@ -266,6 +270,7 @@ def main():
     log["history"] = trainer.state.log_history
     write_log()
     print(f"Adapter saved to {out}")
+    print(f"Peak PyTorch GPU allocation: {log['peak_torch_allocated_gib']} GiB", flush=True)
 
 
 if __name__ == "__main__":
