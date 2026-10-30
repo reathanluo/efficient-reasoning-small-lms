@@ -1,5 +1,33 @@
 # Training job scripts (owner: Person B)
 
+## Preflight before final teacher-data runs
+
+Submit these independent checks only when your assigned queue limits allow:
+
+```bash
+sbatch scripts/train/slurm_audit_teacher.sh
+sbatch scripts/train/slurm_smoke05_fp32.sh
+```
+
+The audit checks all four datasets against training questions/gold and matching
+ordered IDs, then measures prompt + rationale + final answer + EOS using BOTH
+student tokenizers. It writes `runs/teacher_audit_<jobid>.json`, reporting counts
+above each candidate sequence limit and the longest example ID for each style.
+It runs through the documented SLURM partition, loads no model weights, and is
+not a memory-fit test or independent verification of teacher reasoning quality.
+Both tokenizers must already be cached because the job is offline.
+
+The second job checks 64 human solutions in FP32 at LR 0.0001, rank 8, one epoch
+with 16 validation questions. This tests the candidate precision for 0.5B; a short
+pass cannot guarantee numerical stability on every full training run. The 1.5B
+FP32 smoke and vLLM integration check have already succeeded (jobs 70703/70709).
+
+Read the audit before choosing a common sequence limit or launching a long-style
+test. Keep identical problem IDs across all four styles; do not independently
+drop or silently truncate long examples. Use the audit's longest example in the
+subsequent GPU memory-fit test, not only the first few examples. Final model
+selection remains provisional until teacher-data checks are complete.
+
 **30 October 1.5B diagnostic:** job 70517 logged NaN gradient norms at all
 eight steps, zero logged loss, no learning-rate decay, and 0/16 validation.
 Do not use its adapter as a trained result. Trainer's default non-finite loss
