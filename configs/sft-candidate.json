@@ -1,0 +1,48 @@
+{
+  "status": "provisional_not_frozen",
+  "as_of": "2026-10-30",
+  "consumed_by_training_cli": false,
+  "model_sizes": [
+    "05B",
+    "15B"
+  ],
+  "learning_rate": 0.0001,
+  "epochs": 1,
+  "rank": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "lora_bias": "none",
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "precision": "float32",
+  "batch_size": 1,
+  "grad_accum": 8,
+  "max_length": 4096,
+  "val_batch_size": 1,
+  "development_max_new_tokens": 512,
+  "save_steps": 100,
+  "proposed_seeds": [
+    0,
+    1,
+    2
+  ],
+  "seeds_confirmed": false,
+  "freeze_blockers": [
+    "Full teacher-data pilot result and timing",
+    "Confirm other teacher pilot status/results",
+    "Confirm final seeds and approved shared folder"
+  ],
+  "data_sha256": {
+    "long": "78a91a8b5a10024accbcd27b0569f1a2c8fd13232c376aa59f6c37d1a243e372",
+    "standard": "1bf668a01fbe8311ad8c9781ec5be8e1c12b18b531ca67c298f894ef5fb8805e",
+    "concise": "af458c8c0512421fd88936f1d0ce56673e36cee5f7ad21205d723b07144bc71a",
+    "answer_only": "b2b89c893b4c908f9ffb372b225386557181f7fa9242e3f7b47022b0bc63a1e2"
+  }
+}

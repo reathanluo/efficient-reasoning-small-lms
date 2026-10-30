@@ -1,5 +1,26 @@
 # Provisional tuning plan (not frozen settings)
 
+**Superseded on 31 October:** this file retains the development history.
+The common protocol is now frozen in `sft-final.json` using seeds 0/1/2.
+See `scripts/train/final-runs.md` for the final-phase commands and required GPU
+pipeline check. The two full pilots are eligible for reuse only after their
+saved config/data/adapter checks pass on TC1. Do not treat historical pending
+statuses below as live job state.
+
+## Current status, 30 October
+
+See `tuning-results.csv` for comparable scores and failures, `sft-candidate.json`
+for the provisional FP32/4096 settings and data hashes, and
+`final-run-checklist.csv` for the 24 planned runs. None of these declares the
+configuration frozen. Proposed seeds 0/1/2 still need confirmation.
+
+The leading human-data setting is LR 0.0001, rank 8, one epoch (51.4% on all 500
+validation questions in vLLM). Independent two epochs scored 49.8%; the three-epoch
+FP16 attempt failed numerically and has no final score. FP32 smoke checks and
+longest-example fits passed for both sizes. Full 1.5B/long pilot 70806 was last
+confirmed running; the standard 0.5B pilot submission is not confirmed.
+No further exhaustive human-solution sweep is currently planned.
+
 ## Validation audit, 29 October (job 70493)
 
 On the same original adapter and all 500 questions: single/no-cache HF scored
@@ -29,13 +50,11 @@ This is a development reference, not a teacher-data condition or final test resu
 
 ## Before tuning
 
-Run the revised smoke job and verify its output, adapter and validation log.
-Validation now enables KV caching, uses left-padded batches of eight, and records
-progress. Compare batch-size 1 and 8 results on the same saved adapter before
-relying on the new path. GPU numerical differences can change greedy outputs;
-if differences are material, investigate them before comparing trial scores.
-The unit tests use synthetic outputs; they do not establish real-model parity.
-Use the same implementation, batch size and generation cap for tuning trials.
+Training-time validation uses single-question cached HF generation. Use the same
+vLLM implementation, prompt and generation cap to compare saved trial adapters;
+do not mix HF and vLLM scores in the selection table. The batch-eight diagnostic
+found material differences; its scores are not used for selection. The exact
+cause remains unresolved. Local tests do not establish GPU numerical parity.
 
 ## Staged sweep
 
@@ -44,10 +63,9 @@ Never read the test split for selection. Start with the 0.5B model.
 
 1. Learning rate: 0.00005, 0.0001, 0.0002; rank 8 and one epoch.
 2. Rank: 8, 16, 32 at the selected learning rate and one epoch.
-3. Epoch budget: train the selected setting for three epochs and compare the
-   per-epoch validation accuracies. The root adapter is from the last epoch;
-   earlier adapters are in `checkpoint-*`. Check checkpoint availability before
-   choosing an earlier epoch (only the latest two are retained).
+3. Epoch budget: compare independent one- and two-epoch runs through vLLM.
+   Record the three-epoch numerical failure separately; it is not a valid final
+   three-epoch result. Epoch budgets have different learning-rate schedules.
 4. Confirm the candidate fits and behaves sensibly on 1.5B and all four teacher
    styles. Use one common sequence limit and identical problem IDs across styles.
    Human-solution tuning need not be optimal for teacher traces; document that
@@ -62,4 +80,5 @@ Submit one trial per job with `scripts/train/slurm_trial.sh`. The GPU allocation
 allows one GPU and at most two jobs at once, so submit at most one running and one
 pending trial. These jobs are independent; do not submit a dependent trial before
 choosing its settings. Each job requests six hours. Longer runs need tested resume
-support first; the current CLI does not resume a checkpoint.
+support first. New hashed runs support guarded recovery; the TC1 save/resume
+integration check passed in job 70805. See the training README for recovery.

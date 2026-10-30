@@ -40,6 +40,8 @@ def load_resume_log(out, checkpoint, config, data_hashes):
     for key in immutable:
         if log["config"].get(key) != config.get(key):
             raise ValueError(f"Cannot resume with changed {key}")
+    if log["config"].get("defer_validation", False) != config.get("defer_validation", False):
+        raise ValueError("Cannot resume with changed validation mode")
     if log.get("data_sha256") != data_hashes:
         raise ValueError("Input hashes differ or are missing; do not resume changed data")
     state = json.loads((checkpoint / "trainer_state.json").read_text())
@@ -172,6 +174,8 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--save-steps", type=int, help="Also checkpoint every N optimizer steps")
     parser.add_argument("--resume-from-checkpoint", help="Complete Trainer checkpoint under --out")
+    parser.add_argument("--defer-validation", action="store_true",
+                        help="One-epoch runs only: save adapter, then validate in a separate process")
     parser.add_argument("--check-data", action="store_true", help="Validate JSONL only; no model downloads")
     args = parser.parse_args()
     for key in ("limit", "val_limit", "val_batch_size", "epochs", "batch_size", "grad_accum", "max_length", "max_new_tokens", "save_steps"):
@@ -180,6 +184,8 @@ def main():
             parser.error(f"--{key.replace('_', '-')} must be positive")
     if args.learning_rate <= 0:
         parser.error("--learning-rate must be positive")
+    if args.defer_validation and args.epochs != 1:
+        parser.error("Deferred validation currently supports exactly one epoch")
     train_rows = read_rows(args.train_file)
     val_rows = read_rows("data/splits/gsm8k_val.jsonl")
     check_data(train_rows, val_rows)
@@ -250,6 +256,17 @@ def main():
 
         def on_epoch_end(self, args, state, control, model=None, **kwargs):
             epoch = round(state.epoch)
+            if main_args.defer_validation:
+                losses = [item["loss"] for item in state.log_history
+                          if "loss" in item and epoch - 1 < item.get("epoch", -1) <= epoch + 1e-6]
+                log["epochs"] = [item for item in log["epochs"] if item["epoch"] != epoch]
+                log["epochs"].append({"epoch": epoch, "train_loss": sum(losses) / max(1, len(losses)),
+                                      "global_step": state.global_step,
+                                      "gsm8k_val_accuracy": None, "validation_status": "pending"})
+                control.should_save = True
+                write_log()
+                print("Training epoch finished; vLLM validation will run after saving", flush=True)
+                return
             def progress(done, total, seconds):
                 log["stage"] = "validation"
                 log["validation_progress"] = {"epoch": epoch, "done": done, "total": total,
@@ -287,6 +304,8 @@ def main():
             output_dir=str(out), num_train_epochs=args.epochs,
             per_device_train_batch_size=args.batch_size,
             gradient_accumulation_steps=args.grad_accum, learning_rate=args.learning_rate,
+            optim="adamw_torch", lr_scheduler_type="linear", warmup_ratio=0.0,
+            weight_decay=0.0, max_grad_norm=1.0,
             fp16=args.precision == "float16", gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
             logging_strategy="steps", logging_steps=1,
@@ -311,8 +330,8 @@ def main():
     log["peak_torch_reserved_gib"] = round(torch.cuda.max_memory_reserved() / 1024**3, 3)
     trainer.save_model(str(out))
     tokenizer.save_pretrained(str(out))
-    log["status"] = "complete"
-    log["stage"] = "complete"
+    log["status"] = "trained_pending_validation" if args.defer_validation else "complete"
+    log["stage"] = "validation_pending" if args.defer_validation else "complete"
     log["history"] = trainer.state.log_history
     write_log()
     print(f"Adapter saved to {out}")
