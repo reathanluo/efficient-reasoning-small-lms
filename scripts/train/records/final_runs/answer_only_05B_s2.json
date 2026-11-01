@@ -1,0 +1,23 @@
+{
+  "run_id": "answer_only_05B_s2",
+  "status": "evaluated",
+  "protocol_id": "sft-v1-20261031",
+  "protocol_sha256": "9e8913410458e0865e2d6a62c4abdff42c624c7c246d8bfce139b29086c2d112",
+  "adapter": "ckpt/answer_only_05B_s2",
+  "adapter_sha256": "dcf720fbfc137bb853a3094f9b3238f0bbc896f888403dab1a19a874f520f568",
+  "base_model": "Qwen/Qwen2.5-0.5B",
+  "style": "answer_only",
+  "size": "05B",
+  "seed": 2,
+  "data_sha256": "b2b89c893b4c908f9ffb372b225386557181f7fa9242e3f7b47022b0bc63a1e2",
+  "validation": "runs/final_validation/answer_only_05B_s2/70978.jsonl",
+  "accuracy": 0.118,
+  "vllm_wall_seconds": 50.23,
+  "adapter_job_wall_seconds": 1581.72,
+  "adapter_job_includes_legacy_hf_validation": false,
+  "validation_cap": 512,
+  "job_id": "70978",
+  "reused_pilot": false,
+  "backup_verified": false,
+  "handed_off": false
+}

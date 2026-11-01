@@ -1,0 +1,23 @@
+{
+  "run_id": "standard_15B_s0",
+  "status": "evaluated",
+  "protocol_id": "sft-v1-20261031",
+  "protocol_sha256": "9e8913410458e0865e2d6a62c4abdff42c624c7c246d8bfce139b29086c2d112",
+  "adapter": "ckpt/standard_15B_s0",
+  "adapter_sha256": "69b6b02fbb0de6fe239f497be4943bbfdec20638e664ba744db478230765a56b",
+  "base_model": "Qwen/Qwen2.5-1.5B",
+  "style": "standard",
+  "size": "15B",
+  "seed": 0,
+  "data_sha256": "1bf668a01fbe8311ad8c9781ec5be8e1c12b18b531ca67c298f894ef5fb8805e",
+  "validation": "runs/final_validation/standard_15B_s0/71062.jsonl",
+  "accuracy": 0.852,
+  "vllm_wall_seconds": 126.24,
+  "adapter_job_wall_seconds": 2575.99,
+  "adapter_job_includes_legacy_hf_validation": false,
+  "validation_cap": 512,
+  "job_id": "71062",
+  "reused_pilot": false,
+  "backup_verified": false,
+  "handed_off": false
+}

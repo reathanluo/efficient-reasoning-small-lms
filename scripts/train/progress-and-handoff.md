@@ -1,5 +1,29 @@
 # Person B progress and handoff
 
+## Current completion record: 1 November 2026
+
+All 24 final adapters are trained and validation-scored. The restored Mac archive
+was independently checked against the frozen protocol: exact 24-run matrix,
+matching weights/config/input hashes, all 500 validation IDs for every adapter,
+all recorded scores and all 12,000 correctness flags. The archive and all weights
+match SHA-256 records. The tracker now records verified backups rather than
+planned statuses. This update supersedes earlier snapshots below.
+
+Authoritative completed files:
+
+- `scripts/train/handoff/README.md`: handoff contract and GitHub Release steps.
+- `scripts/train/records/final-handoff-manifest.csv`: all paths and hashes.
+- `scripts/train/handoff/validation-summary.md`: eight-condition results with
+  actual token counts and truncation, explicitly validation-only.
+- `scripts/train/records/final-backup-audit.json`: independent restore audit.
+- `scripts/train/methods-draft.md`: updated report text and measured timings.
+
+Remaining actions: commit/push the SMALL records and docs, optionally preserve
+the original `runs/final_validation` raw folder as a second archive, attach the
+verified weight archive as a GitHub Release asset, ask C to verify/load it, and
+incorporate the Methods text into the shared report. Do not add weights to Git
+history. No release/team message/shared-document edit has been made by Codex.
+
 Snapshot: 30 October 2026 (historical; see the 31 October update below). This document records evidence reported from TC1;
 Mac-local records alone do not prove remote job/filesystem state. This is not a
 declaration that the final protocol or adapters are complete.

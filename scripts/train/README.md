@@ -1,5 +1,12 @@
 # Training job scripts (owner: Person B)
 
+**Completed 1 November:** all 24 final adapters trained, validation-scored and
+verified from the restored Mac backup. See `scripts/train/handoff/README.md`,
+`scripts/train/handoff/validation-summary.md` and the CSV manifest under
+`scripts/train/records/`. The Methods draft now uses actual final records.
+GitHub Release delivery and receipt by C remain pending. Earlier instructions
+below describe how the completed work was produced, not jobs to resubmit.
+
 **Current phase (31 October):** common training protocol frozen in
 `configs/sft-final.json`; see `scripts/train/final-runs.md` for authoritative
 commands, pilot reuse, separate vLLM validation and recovery. Earlier provisional

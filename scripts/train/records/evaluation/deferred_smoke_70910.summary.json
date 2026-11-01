@@ -1,0 +1,35 @@
+{
+  "run": "deferred_smoke_70910",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "lora": "ckpt/deferred_smoke_70910",
+  "prompt": "chat",
+  "split": "gsm8k_val",
+  "n_questions": 500,
+  "n_samples": 1,
+  "temperature": 0.0,
+  "n_params": 494032768,
+  "sample_acc": 0.458,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.458,
+      "ci95": [
+        0.416,
+        0.502
+      ],
+      "gen_tokens": 104.5,
+      "flops": 204288477961.216
+    }
+  ],
+  "mean_gen_tokens_per_sample": 104.5,
+  "mean_prompt_tokens": 102.256,
+  "truncation_rate": 0.022,
+  "extraction_methods": {
+    "hash": 0.936,
+    "boxed": 0.004,
+    "last_number": 0.058,
+    "answer_is": 0.002
+  },
+  "mean_unique_answers": 1.0,
+  "wall_seconds": 71.28
+}

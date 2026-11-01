@@ -1,0 +1,32 @@
+{
+  "run": "smoke15_70703_vllm",
+  "model": "Qwen/Qwen2.5-1.5B",
+  "lora": "ckpt/human_15B_s0_fp32_smoke_70703",
+  "prompt": "chat",
+  "split": "gsm8k_val",
+  "n_questions": 16,
+  "n_samples": 1,
+  "temperature": 0.0,
+  "n_params": 1543714304,
+  "sample_acc": 0.8125,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.8125,
+      "ci95": [
+        0.5625,
+        1.0
+      ],
+      "gen_tokens": 99.4375,
+      "flops": 624432435968.0
+    }
+  ],
+  "mean_gen_tokens_per_sample": 99.4375,
+  "mean_prompt_tokens": 102.8125,
+  "truncation_rate": 0.0,
+  "extraction_methods": {
+    "hash": 1.0
+  },
+  "mean_unique_answers": 1.0,
+  "wall_seconds": 83.1
+}
