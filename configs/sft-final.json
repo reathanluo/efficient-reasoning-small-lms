@@ -1,0 +1,78 @@
+{
+  "status": "frozen",
+  "as_of": "2026-10-31",
+  "consumed_by_training_cli": false,
+  "model_sizes": [
+    "05B",
+    "15B"
+  ],
+  "learning_rate": 0.0001,
+  "epochs": 1,
+  "rank": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "lora_bias": "none",
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "precision": "float32",
+  "batch_size": 1,
+  "grad_accum": 8,
+  "max_length": 4096,
+  "val_batch_size": 1,
+  "development_max_new_tokens": 512,
+  "save_steps": 100,
+  "data_sha256": {
+    "long": "78a91a8b5a10024accbcd27b0569f1a2c8fd13232c376aa59f6c37d1a243e372",
+    "standard": "1bf668a01fbe8311ad8c9781ec5be8e1c12b18b531ca67c298f894ef5fb8805e",
+    "concise": "af458c8c0512421fd88936f1d0ce56673e36cee5f7ad21205d723b07144bc71a",
+    "answer_only": "b2b89c893b4c908f9ffb372b225386557181f7fa9242e3f7b47022b0bc63a1e2"
+  },
+  "protocol_id": "sft-v1-20261031",
+  "consumed_by": "reasoning.train.run_final",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "seed_policy": "Fixed prospectively for all four styles and both sizes",
+  "validation_cap": 512,
+  "validation_max_model_len": 8192,
+  "validation_backend": "vllm",
+  "validation_dtype": "float16",
+  "validation_seed": 0,
+  "n_train": 6547,
+  "n_val": 500,
+  "validation_sha256": "828b8cf5d4f7d2e8c4fa55feb8c2dd130672e101a9dbdd00121b030170d1dd66",
+  "prompt_source_sha256": "44af18851d22e806727a0571e01ec02b36d798c94fb3efcab1600cb4e8ea9966",
+  "optimizer": "adamw_torch",
+  "lr_scheduler_type": "linear",
+  "warmup_ratio": 0.0,
+  "weight_decay": 0.0,
+  "max_grad_norm": 1.0,
+  "gradient_checkpointing": true,
+  "gradient_checkpointing_use_reentrant": false,
+  "training_attention": "eager",
+  "pilot_reuse": {
+    "long_15B_s0": "ckpt/long_15B_s0_pilot_70806",
+    "standard_05B_s0": "ckpt/standard_05B_s0_pilot_70807"
+  },
+  "pilot_reuse_condition": "Full train/config/data hash and adapter checks must pass on TC1; not assumed from directory name",
+  "freeze_evidence_jobs": [
+    70801,
+    70803,
+    70805,
+    70806,
+    70807,
+    70892,
+    70909
+  ],
+  "evaluation_note": "512 tokens is a uniform monitoring cap, not a claim that long models can finish within it. C retains the full budget matrix, including 2048/4096 diagnostics.",
+  "selection_limitation": "Initial tuning was on 0.5B human solutions in FP16; pilots establish feasibility of common FP32 teacher protocol, not per-style optimality."
+}

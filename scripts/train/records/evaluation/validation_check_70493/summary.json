@@ -1,0 +1,80 @@
+{
+  "config": {
+    "adapter": "ckpt/human_05B_s0_full_e1",
+    "model": "Qwen/Qwen2.5-0.5B",
+    "out": "runs/validation_check_70493",
+    "limit": 500,
+    "max_new_tokens": 512
+  },
+  "n_val": 500,
+  "status": "complete",
+  "modes": {
+    "single_no_cache": {
+      "accuracy": 0.508,
+      "seconds": 1816.97,
+      "vs_saved_epoch1": {
+        "text_disagreements": 40,
+        "answer_disagreements": 19,
+        "correctness_disagreements": 5,
+        "correctness_disagreement_ids": [
+          "gsm8k-train-1293",
+          "gsm8k-train-3293",
+          "gsm8k-train-3799",
+          "gsm8k-train-5378",
+          "gsm8k-train-6396"
+        ]
+      }
+    },
+    "single_cached": {
+      "accuracy": 0.506,
+      "seconds": 1716.48,
+      "vs_single_no_cache": {
+        "text_disagreements": 40,
+        "answer_disagreements": 19,
+        "correctness_disagreements": 5,
+        "correctness_disagreement_ids": [
+          "gsm8k-train-1293",
+          "gsm8k-train-3293",
+          "gsm8k-train-3799",
+          "gsm8k-train-5378",
+          "gsm8k-train-6396"
+        ]
+      }
+    },
+    "batch8_cached": {
+      "accuracy": 0.468,
+      "seconds": 804.62,
+      "vs_single_no_cache": {
+        "text_disagreements": 81,
+        "answer_disagreements": 57,
+        "correctness_disagreements": 24,
+        "correctness_disagreement_ids": [
+          "gsm8k-train-369",
+          "gsm8k-train-415",
+          "gsm8k-train-485",
+          "gsm8k-train-528",
+          "gsm8k-train-740",
+          "gsm8k-train-1293",
+          "gsm8k-train-1553",
+          "gsm8k-train-1730",
+          "gsm8k-train-1848",
+          "gsm8k-train-2159",
+          "gsm8k-train-2325",
+          "gsm8k-train-2510",
+          "gsm8k-train-2719",
+          "gsm8k-train-2993",
+          "gsm8k-train-3165",
+          "gsm8k-train-3799",
+          "gsm8k-train-4461",
+          "gsm8k-train-4800",
+          "gsm8k-train-4867",
+          "gsm8k-train-5609",
+          "gsm8k-train-5837",
+          "gsm8k-train-5998",
+          "gsm8k-train-6041",
+          "gsm8k-train-6212"
+        ]
+      }
+    }
+  }
+}

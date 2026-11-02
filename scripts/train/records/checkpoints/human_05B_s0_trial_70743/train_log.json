@@ -1,0 +1,49 @@
+{
+  "config": {
+    "model": "Qwen/Qwen2.5-0.5B",
+    "train_file": "data/splits/gsm8k_train.jsonl",
+    "out": "ckpt/human_05B_s0_trial_70743",
+    "limit": null,
+    "val_limit": null,
+    "val_batch_size": 1,
+    "epochs": 3,
+    "rank": 8,
+    "learning_rate": 0.0001,
+    "precision": "float16",
+    "batch_size": 1,
+    "grad_accum": 8,
+    "max_length": 2048,
+    "max_new_tokens": 512,
+    "seed": 0,
+    "check_data": false
+  },
+  "n_train": 6973,
+  "n_val": 500,
+  "epochs": [
+    {
+      "epoch": 1,
+      "train_loss": 0.5481106651376152,
+      "gsm8k_val_accuracy": 0.492,
+      "global_step": 872,
+      "validation_seconds": 1833.18
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.47562029816513735,
+      "gsm8k_val_accuracy": 0.476,
+      "global_step": 1744,
+      "validation_seconds": 1711.44
+    }
+  ],
+  "status": "failed",
+  "validation_predictions": "validation_epoch_*.jsonl",
+  "wall_seconds": 8040.62,
+  "stage": "failed",
+  "validation_progress": {
+    "epoch": 2,
+    "done": 500,
+    "total": 500,
+    "seconds": 1711.41
+  },
+  "error": "FloatingPointError: Non-finite grad_norm: nan. Stop this run; check precision and model/data before continuing."
+}

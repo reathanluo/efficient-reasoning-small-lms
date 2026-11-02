@@ -1,0 +1,141 @@
+{
+  "status": "complete",
+  "checks": "matching ordered IDs, train-only IDs, questions/gold, schema",
+  "files": {
+    "long": {
+      "count": 6547,
+      "sha256": "78a91a8b5a10024accbcd27b0569f1a2c8fd13232c376aa59f6c37d1a243e372"
+    },
+    "standard": {
+      "count": 6547,
+      "sha256": "1bf668a01fbe8311ad8c9781ec5be8e1c12b18b531ca67c298f894ef5fb8805e"
+    },
+    "concise": {
+      "count": 6547,
+      "sha256": "af458c8c0512421fd88936f1d0ce56673e36cee5f7ad21205d723b07144bc71a"
+    },
+    "answer_only": {
+      "count": 6547,
+      "sha256": "b2b89c893b4c908f9ffb372b225386557181f7fa9242e3f7b47022b0bc63a1e2"
+    }
+  },
+  "models": {
+    "Qwen/Qwen2.5-0.5B": {
+      "long": {
+        "count": 6547,
+        "mean": 1316.0,
+        "median": 1158,
+        "p90": 2120,
+        "max": 4039,
+        "over_limit": {
+          "2048": 708,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-6831"
+      },
+      "standard": {
+        "count": 6547,
+        "mean": 349.13,
+        "median": 336,
+        "p90": 491,
+        "max": 991,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-4569"
+      },
+      "concise": {
+        "count": 6547,
+        "mean": 144.25,
+        "median": 138,
+        "p90": 189,
+        "max": 381,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-304"
+      },
+      "answer_only": {
+        "count": 6547,
+        "mean": 107.39,
+        "median": 104,
+        "p90": 137,
+        "max": 259,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-3331"
+      }
+    },
+    "Qwen/Qwen2.5-1.5B": {
+      "long": {
+        "count": 6547,
+        "mean": 1316.0,
+        "median": 1158,
+        "p90": 2120,
+        "max": 4039,
+        "over_limit": {
+          "2048": 708,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-6831"
+      },
+      "standard": {
+        "count": 6547,
+        "mean": 349.13,
+        "median": 336,
+        "p90": 491,
+        "max": 991,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-4569"
+      },
+      "concise": {
+        "count": 6547,
+        "mean": 144.25,
+        "median": 138,
+        "p90": 189,
+        "max": 381,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-304"
+      },
+      "answer_only": {
+        "count": 6547,
+        "mean": 107.39,
+        "median": 104,
+        "p90": 137,
+        "max": 259,
+        "over_limit": {
+          "2048": 0,
+          "4096": 0,
+          "8192": 0,
+          "16384": 0
+        },
+        "longest_example_id": "gsm8k-train-3331"
+      }
+    }
+  },
+  "note": "Lengths include prompt, rationale, final answer and EOS. This is not a GPU memory-fit test."
+}

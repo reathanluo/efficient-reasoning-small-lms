@@ -1,0 +1,33 @@
+{
+  "run": "70328",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "lora": "ckpt/human_05B_s0_trial_70328",
+  "prompt": "chat",
+  "split": "gsm8k_val",
+  "n_questions": 500,
+  "n_samples": 1,
+  "temperature": 0.0,
+  "n_params": 494032768,
+  "sample_acc": 0.514,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.514,
+      "ci95": [
+        0.472,
+        0.558
+      ],
+      "gen_tokens": 90.02,
+      "flops": 189981288999.936
+    }
+  ],
+  "mean_gen_tokens_per_sample": 90.02,
+  "mean_prompt_tokens": 102.256,
+  "truncation_rate": 0.006,
+  "extraction_methods": {
+    "hash": 0.994,
+    "last_number": 0.006
+  },
+  "mean_unique_answers": 1.0,
+  "wall_seconds": 66.33
+}

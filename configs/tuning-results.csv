@@ -1,0 +1,17 @@
+record_id,train_job,eval_job,model,data,precision,learning_rate,rank,epochs,status,n_eval,accuracy,correct,eval_backend,max_new_tokens,generated_tokens_mean,notes
+matched_chat_base,,70516,Qwen/Qwen2.5-0.5B,human_solutions,float16,,,,completed,500,0.43,215,vllm,512,297.0,"Untrained chat baseline, not eight-shot baseline"
+lr_5e-5_r8_e1,70327,70516,Qwen/Qwen2.5-0.5B,human_solutions,float16,5e-05,8,1,completed,500,0.502,251,vllm,512,91.7,
+lr_1e-4_r8_e1,70328,70516,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0001,8,1,completed,500,0.514,257,vllm,512,90.0,Leading human-data candidate; not final FP32 teacher condition
+lr_2e-4_r8_e1,70464,70516,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0002,8,1,completed,500,0.51,255,vllm,512,88.8,
+lr_2e-4_r16_e1,70465,70516,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0002,16,1,completed,500,0.498,249,vllm,512,94.2,
+lr_1e-4_r16_e1,70710,70739,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0001,16,1,completed,500,0.492,246,vllm,512,96.5,
+lr_1e-4_r32_e1,70711,70739,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0001,32,1,completed,500,0.484,242,vllm,512,91.0,
+lr_1e-4_r8_e2,70742,70800,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0001,8,2,completed,500,0.498,249,vllm,512,92.5,
+lr_1e-4_r8_e3_failed,70743,,Qwen/Qwen2.5-0.5B,human_solutions,float16,0.0001,8,3,failed,,,,,,,NaN grad_norm at step 2086; no completed three-epoch score; do not enter partial epoch validation as final
+15B_fp16_smoke_failed,70517,,Qwen/Qwen2.5-1.5B,human_solutions_64,float16,0.0002,8,1,invalid_numeric_run,16,,,hf,512,,All logged grad_norm NaN; zero filtered loss and 0/16 are not valid training evidence
+15B_fp32_smoke,70703,70709,Qwen/Qwen2.5-1.5B,human_solutions_64,float32,0.0002,8,1,completed_smoke,16,0.8125,13,vllm,512,99.4,Smoke only; too small for final quality claims; FP16 inference
+05B_fp32_smoke,70802,,Qwen/Qwen2.5-0.5B,human_solutions_64,float32,0.0001,8,1,completed_smoke,16,0.5,8,hf,512,,Smoke only; not comparable to full-500 vLLM tuning scores
+teacher_long15_pilot_cap512,70806,70892,Qwen/Qwen2.5-1.5B,teacher_long_6547,float32,0.0001,8,1,completed_pilot,500,0.282,141,vllm,512,509.2,Diagnostic validation budget; truncated 95.0%; max model length 8192; no final-test claim
+teacher_long15_pilot_cap2048,70806,70892,Qwen/Qwen2.5-1.5B,teacher_long_6547,float32,0.0001,8,1,completed_pilot,500,0.646,323,vllm,2048,1192.6,Diagnostic validation budget; truncated 30.8%; max model length 8192; no final-test claim
+teacher_long15_pilot_cap4096,70806,70892,Qwen/Qwen2.5-1.5B,teacher_long_6547,float32,0.0001,8,1,completed_pilot,500,0.626,313,vllm,4096,1830.0,Diagnostic validation budget; truncated 31.0%; max model length 8192; no final-test claim
+teacher_standard05_pilot_cap512,70807,70909,Qwen/Qwen2.5-0.5B,teacher_standard_6547,float32,0.0001,8,1,completed_pilot,500,0.6,300,vllm,512,244.7,Full teacher pilot; truncated 2.8%; max model length 4096; registration uses common 8192 context setting

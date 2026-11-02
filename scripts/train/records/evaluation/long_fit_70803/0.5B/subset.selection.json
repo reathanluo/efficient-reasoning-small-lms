@@ -1,0 +1,40 @@
+{
+  "diagnostic_only": true,
+  "model": "Qwen/Qwen2.5-0.5B",
+  "source": "data/sft/long.jsonl",
+  "global_max_tokens": 4039,
+  "examples": [
+    {
+      "id": "gsm8k-train-6831",
+      "tokens": 4039
+    },
+    {
+      "id": "gsm8k-train-6027",
+      "tokens": 395
+    },
+    {
+      "id": "gsm8k-train-1370",
+      "tokens": 900
+    },
+    {
+      "id": "gsm8k-train-5108",
+      "tokens": 1158
+    },
+    {
+      "id": "gsm8k-train-7468",
+      "tokens": 1526
+    },
+    {
+      "id": "gsm8k-train-3895",
+      "tokens": 2120
+    },
+    {
+      "id": "gsm8k-train-4493",
+      "tokens": 2682
+    },
+    {
+      "id": "gsm8k-train-2658",
+      "tokens": 3575
+    }
+  ]
+}

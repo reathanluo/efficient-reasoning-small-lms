@@ -1,0 +1,121 @@
+{
+  "config": {
+    "model": "Qwen/Qwen2.5-0.5B",
+    "train_file": "data/splits/gsm8k_train.jsonl",
+    "out": "ckpt/deferred_smoke_70910",
+    "limit": 64,
+    "val_limit": null,
+    "val_batch_size": 1,
+    "epochs": 1,
+    "rank": 8,
+    "learning_rate": 0.0001,
+    "precision": "float32",
+    "batch_size": 1,
+    "grad_accum": 8,
+    "max_length": 4096,
+    "max_new_tokens": 512,
+    "seed": 0,
+    "save_steps": 4,
+    "resume_from_checkpoint": null,
+    "defer_validation": true,
+    "check_data": false
+  },
+  "n_train": 64,
+  "n_val": 500,
+  "data_sha256": {
+    "train": "646f81d47a0d7a85cddcc178b583bc13b2c6b2598b63f7e07bd318951205dc8d",
+    "validation": "828b8cf5d4f7d2e8c4fa55feb8c2dd130672e101a9dbdd00121b030170d1dd66"
+  },
+  "epochs": [
+    {
+      "epoch": 1,
+      "train_loss": 0.597625,
+      "global_step": 8,
+      "gsm8k_val_accuracy": 0.458,
+      "validation_status": "complete",
+      "validation_backend": "vllm",
+      "validation_seconds": 71.28
+    }
+  ],
+  "status": "complete",
+  "stage": "complete",
+  "validation_predictions": "validation_epoch_*.jsonl",
+  "wall_seconds": 19.64,
+  "last_checkpoint": "ckpt/deferred_smoke_70910/checkpoint-8",
+  "peak_torch_allocated_gib": 2.625,
+  "peak_torch_reserved_gib": 5.252,
+  "history": [
+    {
+      "loss": 0.7879,
+      "grad_norm": 3.2415030002593994,
+      "learning_rate": 8.75e-05,
+      "epoch": 0.125,
+      "step": 1
+    },
+    {
+      "loss": 0.565,
+      "grad_norm": 1.7124723196029663,
+      "learning_rate": 7.500000000000001e-05,
+      "epoch": 0.25,
+      "step": 2
+    },
+    {
+      "loss": 0.6169,
+      "grad_norm": 1.6142396926879883,
+      "learning_rate": 6.25e-05,
+      "epoch": 0.375,
+      "step": 3
+    },
+    {
+      "loss": 0.7204,
+      "grad_norm": 0.905500054359436,
+      "learning_rate": 5e-05,
+      "epoch": 0.5,
+      "step": 4
+    },
+    {
+      "loss": 0.5072,
+      "grad_norm": 1.049332618713379,
+      "learning_rate": 3.7500000000000003e-05,
+      "epoch": 0.625,
+      "step": 5
+    },
+    {
+      "loss": 0.481,
+      "grad_norm": 0.8645115494728088,
+      "learning_rate": 2.5e-05,
+      "epoch": 0.75,
+      "step": 6
+    },
+    {
+      "loss": 0.5651,
+      "grad_norm": 0.9313435554504395,
+      "learning_rate": 1.25e-05,
+      "epoch": 0.875,
+      "step": 7
+    },
+    {
+      "loss": 0.5375,
+      "grad_norm": 1.0858718156814575,
+      "learning_rate": 0.0,
+      "epoch": 1.0,
+      "step": 8
+    },
+    {
+      "train_runtime": 18.2165,
+      "train_samples_per_second": 3.513,
+      "train_steps_per_second": 0.439,
+      "total_flos": 28433085511680.0,
+      "train_loss": 0.5976211167871952,
+      "epoch": 1.0,
+      "step": 8
+    }
+  ],
+  "final_protocol_id": "smoke-only-not-final",
+  "final_validation": {
+    "raw": "runs/deferred_smoke_70910.jsonl",
+    "summary": "runs/deferred_smoke_70910.summary.json",
+    "cap": 512,
+    "dtype": "float16"
+  }
+}

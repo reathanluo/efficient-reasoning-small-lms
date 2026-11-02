@@ -1,0 +1,61 @@
+{
+  "config": {
+    "model": "Qwen/Qwen2.5-1.5B",
+    "train_file": "runs/long_fit_70803/1.5B/subset.jsonl",
+    "out": "ckpt/long_fit_1.5B_70803",
+    "limit": null,
+    "val_limit": 4,
+    "val_batch_size": 1,
+    "epochs": 1,
+    "rank": 8,
+    "learning_rate": 0.0001,
+    "precision": "float32",
+    "batch_size": 1,
+    "grad_accum": 8,
+    "max_length": 4096,
+    "max_new_tokens": 512,
+    "seed": 0,
+    "check_data": false
+  },
+  "n_train": 8,
+  "n_val": 4,
+  "epochs": [
+    {
+      "epoch": 1,
+      "train_loss": 0.8848,
+      "gsm8k_val_accuracy": 0.0,
+      "global_step": 1,
+      "validation_seconds": 62.88
+    }
+  ],
+  "status": "complete",
+  "validation_predictions": "validation_epoch_*.jsonl",
+  "wall_seconds": 86.94,
+  "stage": "complete",
+  "validation_progress": {
+    "epoch": 1,
+    "done": 4,
+    "total": 4,
+    "seconds": 62.87
+  },
+  "peak_torch_allocated_gib": 13.43,
+  "peak_torch_reserved_gib": 16.104,
+  "history": [
+    {
+      "loss": 0.8848,
+      "grad_norm": 0.2114119827747345,
+      "learning_rate": 0.0,
+      "epoch": 1.0,
+      "step": 1
+    },
+    {
+      "train_runtime": 84.3857,
+      "train_samples_per_second": 0.095,
+      "train_steps_per_second": 0.012,
+      "total_flos": 129806395223040.0,
+      "train_loss": 0.8848459124565125,
+      "epoch": 1.0,
+      "step": 1
+    }
+  ]
+}

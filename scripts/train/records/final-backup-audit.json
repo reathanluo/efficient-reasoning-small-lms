@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-01",
+  "protocol_id": "sft-v1-20261031",
+  "archive_filename": "sc4001-final-backup-20261101.tar.gz",
+  "archive_sha256": "ab5d366494eee8dd911b4fcb04a72ce21c37ada1a36a6fb8947bb0daead0f6dd",
+  "archive_bytes": 611286531,
+  "verified_adapters": 24,
+  "matrix_ids_exact": true,
+  "all_weight_hashes_match": true,
+  "all_validation_ids_match": true,
+  "all_12000_correctness_flags_recomputed": true,
+  "monitoring_cap": 512,
+  "backup_includes_optimizer_checkpoints": false,
+  "handoff_completed": false
+}
