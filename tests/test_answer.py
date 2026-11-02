@@ -49,6 +49,18 @@ def test_is_correct():
     assert is_correct("0.333333", "0.333333")
 
 
+@pytest.mark.parametrize("number", [
+    "1" * 400,                 # integer too large for a float
+    "1" * 400 + ".5",          # non-integer too large for a float
+    "1" * 400 + "/3",          # fraction too large for a float
+    "3/" + "1" * 400,          # tiny fraction
+    "1" * 5000,                # past Python's integer parsing limit
+])
+def test_runaway_numbers_are_wrong_not_a_crash(number):
+    pred, _ = extract_pred(f"so the total is {number}")
+    assert not is_correct(pred, "42")
+
+
 def test_majority_and_ties():
     assert majority(["5", "6", "5", None]) == "5"
     assert majority(["6", "5"]) == "6"           # tie -> first seen
