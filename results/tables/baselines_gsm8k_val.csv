@@ -1,0 +1,11 @@
+run,model,lora,prompt,split,n_questions,n_samples,temperature,acc_k1,acc_k1_lo,acc_k1_hi,k_max,acc_kmax,acc_kmax_lo,acc_kmax_hi,gen_tokens_per_answer,gen_tokens_kmax,prompt_tokens,truncation_rate,mean_unique_answers,format_hash,format_boxed,format_fallback,wall_seconds
+base05B_chat_greedy,Qwen/Qwen2.5-0.5B,,chat,gsm8k_val,500,1,0.0,0.438,0.392,0.482,1,0.438,0.392,0.482,448.0,448.0,102.3,0.29,1.0,0.076,0.212,0.712,73.7
+base05B_fewshot_greedy,Qwen/Qwen2.5-0.5B,,fewshot,gsm8k_val,500,1,0.0,0.47,0.424,0.514,1,0.47,0.424,0.514,112.7,112.7,1054.9,0.024,1.0,0.968,0.0,0.032,76.27
+base05B_fewshot_sc16,Qwen/Qwen2.5-0.5B,,fewshot,gsm8k_val,500,16,0.7,0.3382,0.3119,0.3659,16,0.558,0.516,0.602,98.5,1575.7,1054.9,0.0053,8.8,0.9655,0.0001,0.0344,323.48
+base15B_chat_greedy,Qwen/Qwen2.5-1.5B,,chat,gsm8k_val,500,1,0.0,0.008,0.002,0.016,1,0.008,0.002,0.016,1010.8,1010.8,102.3,0.986,0.23,0.002,0.0,0.998,134.61
+base15B_fewshot_greedy,Qwen/Qwen2.5-1.5B,,fewshot,gsm8k_val,500,1,0.0,0.762,0.724,0.798,1,0.762,0.724,0.798,93.3,93.3,1054.9,0.0,1.0,1.0,0.0,0.0,89.47
+base15B_fewshot_sc16,Qwen/Qwen2.5-1.5B,,fewshot,gsm8k_val,500,16,0.7,0.67,0.6456,0.6961,16,0.88,0.852,0.908,95.3,1525.1,1054.9,0.0005,4.62,0.9975,0.0004,0.0021,625.83
+inst05B_chat_greedy,Qwen/Qwen2.5-0.5B-Instruct,,chat,gsm8k_val,500,1,0.0,0.566,0.524,0.606,1,0.566,0.524,0.606,282.2,282.2,112.3,0.004,1.0,0.126,0.85,0.024,67.93
+inst05B_chat_sc16,Qwen/Qwen2.5-0.5B-Instruct,,chat,gsm8k_val,500,16,0.7,0.4881,0.4609,0.5161,16,0.734,0.696,0.772,280.8,4492.2,112.3,0.0035,6.64,0.277,0.6464,0.0766,422.67
+inst15B_chat_greedy,Qwen/Qwen2.5-1.5B-Instruct,,chat,gsm8k_val,500,1,0.0,0.852,0.822,0.884,1,0.852,0.822,0.884,274.4,274.4,112.3,0.002,1.0,0.008,0.802,0.19,81.25
+inst15B_chat_sc16,Qwen/Qwen2.5-1.5B-Instruct,,chat,gsm8k_val,500,16,0.7,0.7947,0.772,0.8165,16,0.928,0.904,0.95,260.4,4166.4,112.3,0.0009,3.06,0.0693,0.596,0.3347,518.68
