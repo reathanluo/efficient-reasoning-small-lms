@@ -6,9 +6,12 @@
 #   sbatch scripts/eval/slurm_students.sh gsm8k_val ckpt/long_05B_s0
 #   RUNS=greedy sbatch --export=ALL scripts/eval/slurm_students.sh gsm8k_val
 #
-# Long-style students write ~1,200 tokens per answer, so 16 samples x 500
-# questions is a big job: if it hits the 6-hour limit, resubmit the same command
-# and finished runs are skipped. Same QoS limits as slurm_baselines.sh.
+# Long-style students write about 1,800 tokens per answer, so 16 samples x 500
+# questions takes about 2.5 hours per adapter. If a job hits the 6-hour limit,
+# resubmit the same command: finished runs are skipped, and the unfinished run
+# starts again, because a run only saves when it ends. On gsm8k_test, 16 long
+# samples can't finish in one job, so use RUNS="greedy sc8" for long adapters: see
+# scripts/eval/README.md. Same QoS limits as slurm_baselines.sh.
 #
 #SBATCH --job-name=g-students
 #SBATCH --partition=UGGPU-TC1

@@ -2,7 +2,7 @@
 # SLURM job for the baseline matrix on the NTU CCDS TC1 cluster.
 # Submit it from the repo root on the TC1 head node:
 #
-#   sbatch scripts/eval/slurm_baselines.sh
+#   sbatch scripts/eval/slurm_baselines.sh [split]    # default split: gsm8k_val
 #
 # Values follow the TC1 user guide (Feb 2026): partition UGGPU-TC1, QoS
 # "normal" = at most 1 GPU, 20 CPUs, 64G memory, 2 jobs and 6 hours per user.
@@ -39,4 +39,4 @@ export HF_HUB_OFFLINE=1
 export DTYPE=float16
 
 nvidia-smi
-bash scripts/eval/run_baselines.sh gsm8k_val
+bash scripts/eval/run_baselines.sh "${1:-gsm8k_val}"

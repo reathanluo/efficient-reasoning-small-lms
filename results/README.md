@@ -3,17 +3,18 @@
 Small, committed outputs that the report uses:
 
 - `tables/`: `*.summary.json` files copied from `runs/`, plus CSV tables
-- `scored/`: `*.scored.jsonl` files copied from `runs/` (per question: each sample's answer, correctness, generated tokens and finish reason, in sampling order). Person A's adaptive-voting analysis (H4) reads these, because TC1 does not let anyone read another user's `runs/`.
+- `scored/`: `*.scored.jsonl` files copied from `runs/` (per question: each sample's answer, correctness, generated tokens and finish reason, in sampling order). They let anyone rerun the analysis without a GPU, because TC1 does not let anyone read another user's `runs/`.
 - `figures/`: final plots (PNG or PDF), named the way the report cites them
 
 Raw generations stay in `runs/`, which is gitignored because it is too large.
 
-To publish a finished batch of runs:
+Files directly in `scored/` and `tables/` are from `gsm8k_val`. Other splits go in a subfolder named after the split, because a run has the same file name on every split. For example, to publish the `gsm8k_test` runs:
 
 ```bash
-mkdir -p results/scored results/tables
-cp runs/baselines/gsm8k_val/*.scored.jsonl results/scored/
-cp runs/baselines/gsm8k_val/*.summary.json results/tables/
+mkdir -p results/scored/gsm8k_test results/tables/gsm8k_test
+cp runs/baselines/gsm8k_test/*.scored.jsonl runs/students/gsm8k_test/*.scored.jsonl results/scored/gsm8k_test/
+cp runs/baselines/gsm8k_test/*.summary.json runs/students/gsm8k_test/*.summary.json results/tables/gsm8k_test/
+cp runs/baselines/gsm8k_test/*.meta.json runs/students/gsm8k_test/*.meta.json results/tables/gsm8k_test/
 ```
 
 ## What is here
@@ -24,7 +25,7 @@ These are the untrained models: TC1 job 70474, 29 Oct 2026, V100, float16, vLLM 
 
 - `tables/baselines_gsm8k_val.csv` is one row per run, built with `python -m reasoning.eval.table`.
 - `tables/*.summary.json` and `tables/*.meta.json` are the full summary and the exact settings of each run.
-- `scored/*.scored.jsonl` holds per-question, per-sample answers, tokens and finish reasons. The H4 replay reads these.
+- `scored/*.scored.jsonl` holds per-question, per-sample answers, tokens and finish reasons.
 
 Read these with three caveats:
 

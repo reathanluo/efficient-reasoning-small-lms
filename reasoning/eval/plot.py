@@ -5,7 +5,8 @@
         --csv results/tables/students_mean_gsm8k_val.csv
 
 Reads the students' *.summary.json files and averages over training seeds. Each
-style is a voting curve (k = 1, 2, 4, 8, 16 at T = 0.7) plus one greedy answer.
+style is a voting curve (k = 1, 2, 4, 8 and, where run, 16 at T = 0.7) plus one
+greedy answer.
 Also draws the Instruct baselines when their summaries are in the same folder.
 Writes <out>.png and <out>.pdf, and a CSV of every plotted point.
 """
@@ -25,7 +26,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 
-RUN_RE = re.compile(r"(answer_only|concise|standard|long)_(05B|15B)_s\d(?:_pilot_\d+)?_(greedy|sc16)$")
+RUN_RE = re.compile(r"(answer_only|concise|standard|long)_(05B|15B)_s\d(?:_pilot_\d+)?_(greedy|sc16|sc8)$")
 SIZES = {"05B": "Qwen2.5-0.5B", "15B": "Qwen2.5-1.5B"}
 STYLES = {  # fixed colour per style, in legend order
     "standard": ("Standard", "#2a78d6"),
@@ -72,7 +73,7 @@ def draw(ax, rows: list[dict], size: str) -> None:
 
     ax.axvline(BUDGET, color=MUTED, lw=1, ls=(0, (3, 3)), zorder=1)
     for style, (label, color) in [("instruct", INSTRUCT), *STYLES.items()]:  # baseline underneath
-        votes, greedy = series(style, "sc16"), series(style, "greedy")
+        votes, greedy = series(style, "sc16") or series(style, "sc8"), series(style, "greedy")
         width = 1.5 if style == "instruct" else 2
         ax.plot([r["gen_tokens"] for r in votes], [100 * r["acc"] for r in votes], color=color, lw=width,
                 marker="o", ms=5.5, mec=SURFACE, mew=1, zorder=3, solid_capstyle="round")
