@@ -6,7 +6,9 @@
 #   bash scripts/eval/run_students.sh gsm8k_val ckpt/concise_05B_s*   # just these
 #
 # For each adapter ckpt/{style}_{size}_s{seed}/: greedy, and 16 samples at T=0.7
-# for self-consistency. Choose with RUNS="greedy", RUNS="sc16" or both (default).
+# for self-consistency. Choose with RUNS="greedy", RUNS="sc16", RUNS="sc8" or a
+# list (default: "greedy sc16"). sc8 takes 8 samples, for runs too slow for 16: see
+# scripts/eval/README.md.
 #
 # Length cap: the long-style teacher traces average ~1,200 tokens and reach
 # ~4,000 (data/sft/stats.json), so students get 4,096 new tokens. With the
@@ -59,7 +61,8 @@ for a in "${ADAPTERS[@]}"; do
     case "$r" in
       greedy) gen "$a" greedy 1 0.0 ;;
       sc16)   gen "$a" sc16 16 0.7 ;;
-      *) echo "unknown run '$r' (use greedy or sc16)" >&2; exit 1 ;;
+      sc8)    gen "$a" sc8 8 0.7 ;;
+      *) echo "unknown run '$r' (use greedy, sc16 or sc8)" >&2; exit 1 ;;
     esac
   done
 done

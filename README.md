@@ -47,8 +47,8 @@ Everyone can read and run anything. To change a folder you don't own, open a pul
 **Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
 
 1. **This week:** set up the TC1 environment (below), confirm your QoS with `MyTCinfo`, and submit `scripts/eval/slurm_baselines.sh` to run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
-2. Evaluate each of B's adapters on `gsm8k_val` with `sbatch scripts/eval/slurm_students.sh gsm8k_val`: greedy, and 16 samples for self-consistency, with a 4,096-token cap so long-style students are not cut off by our setting. Copy each finished batch's `*.scored.jsonl` into `results/scored/` for Person A's H4 analysis.
-3. From 9 Nov, do the final runs on `gsm8k_test`, `svamp` and `gsm_symbolic` with the frozen settings.
+2. Evaluate each of B's adapters on `gsm8k_val` with `sbatch scripts/eval/slurm_students.sh gsm8k_val`: greedy, and 16 samples for self-consistency, with a 4,096-token cap so long-style students are not cut off by our setting. Copy each finished batch's scored files into `results/scored/`.
+3. Do the final runs on `gsm8k_test` with the frozen settings, following [scripts/eval/README.md](scripts/eval/README.md). Run `svamp` and `gsm_symbolic` after that if time allows.
 4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
 5. **Report:** Experiments and Results.
 
@@ -174,7 +174,7 @@ python -m reasoning.data --out data/splits
 |---|---|---|
 | `gsm8k_train` | 6,973 | exemplars, teacher generation, SFT |
 | `gsm8k_val` | 500 | **all tuning and debugging** (held out from GSM8K train, seed 0) |
-| `gsm8k_test` | 1,319 | **final runs only, from 9 Nov** |
+| `gsm8k_test` | 1,319 | **final runs only** |
 | `svamp` | 1,000 | out-of-distribution eval |
 | `gsm_symbolic` | 5,000 | perturbed GSM8K-test templates; robustness and contamination check |
 | `exemplars` | 8 | fixed few-shot exemplars (from `gsm8k_train`) |
