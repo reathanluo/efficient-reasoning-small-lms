@@ -50,7 +50,12 @@ def canonical(x: Fraction) -> str:
 
 def normalize(s: str) -> Optional[str]:
     f = to_fraction(s)
-    return None if f is None else canonical(f)
+    if f is None:
+        return None
+    try:
+        return canonical(f)
+    except OverflowError:  # a non-integer too large for a float: no usable answer
+        return None
 
 
 def extract_gold(gsm8k_answer_field: str) -> str:
@@ -102,4 +107,7 @@ def is_correct(pred: Optional[str], gold: str, rel_tol: float = 1e-6) -> bool:
     p, g = to_fraction(pred), to_fraction(gold)
     if p is None or g is None:
         return False
-    return abs(float(p) - float(g)) <= rel_tol * max(1.0, abs(float(g)))
+    try:
+        return abs(float(p) - float(g)) <= rel_tol * max(1.0, abs(float(g)))
+    except OverflowError:  # a runaway answer with hundreds of digits can't match gold
+        return False
