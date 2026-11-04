@@ -1,0 +1,29 @@
+H1 05B: concise maj@4 (311 tokens) vs standard greedy (315 tokens)
+  pooled, concise - standard: 31.3 vs 48.7, diff -17.4 [-19.6, -15.2], p=0.000
+  seed 0: 31.0 vs 49.4, diff -18.4 [-20.8, -15.9], p=0.000
+  seed 1: 32.0 vs 48.9, diff -16.9 [-19.5, -14.4], p=0.000
+  seed 2: 30.9 vs 47.9, diff -17.0 [-19.6, -14.5], p=0.000
+H1 15B: concise maj@8 (471 tokens) vs standard greedy (277 tokens)
+  pooled, concise - standard: 58.2 vs 74.9, diff -16.8 [-19.2, -14.3], p=0.000
+  seed 0: 58.3 vs 75.4, diff -17.0 [-19.6, -14.5], p=0.000
+  seed 1: 57.9 vs 74.5, diff -16.6 [-19.3, -13.9], p=0.000
+  seed 2: 58.2 vs 74.8, diff -16.6 [-19.2, -14.1], p=0.000
+
+H2 05B: concise vs standard
+  unique answers among 8, concise - standard: 5.3 vs 4.2, diff +1.1 [+1.0, +1.2], p=0.000
+  gain k=1 to 8 (points), concise - standard: 8.9 vs 13.4, diff -4.5 [-5.5, -3.4], p=0.000
+H2 15B: concise vs standard
+  unique answers among 8, concise - standard: 4.0 vs 2.4, diff +1.6 [+1.5, +1.7], p=0.000
+  gain k=1 to 8 (points), concise - standard: 11.3 vs 9.2, diff +2.0 [+1.0, +3.2], p=0.000
+
+H3 05B: long vs concise, greedy (1862 vs 199 tokens, truncated 32.0% vs 3.8%)
+  pooled, long - concise: 31.9 vs 32.3, diff -0.4 [-2.5, +1.9], p=0.783
+  seed 0: long-only correct 205, concise-only correct 182, McNemar p=0.2634
+  seed 1: long-only correct 183, concise-only correct 194, McNemar p=0.6066
+  seed 2: long-only correct 170, concise-only correct 196, McNemar p=0.1912
+H3 15B: long vs concise, greedy (1928 vs 115 tokens, truncated 33.5% vs 1.7%)
+  pooled, long - concise: 59.8 vs 54.2, diff +5.6 [+3.0, +8.2], p=0.000
+  seed 0: long-only correct 271, concise-only correct 198, McNemar p=0.0009
+  seed 1: long-only correct 266, concise-only correct 166, McNemar p=0.0000
+  seed 2: long-only correct 258, concise-only correct 211, McNemar p=0.0336
+

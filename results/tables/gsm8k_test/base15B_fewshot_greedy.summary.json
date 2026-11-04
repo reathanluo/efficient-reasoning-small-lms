@@ -1,0 +1,33 @@
+{
+  "run": "base15B_fewshot_greedy",
+  "model": "Qwen/Qwen2.5-1.5B",
+  "lora": null,
+  "prompt": "fewshot",
+  "split": "gsm8k_test",
+  "n_questions": 1319,
+  "n_samples": 1,
+  "temperature": 0.0,
+  "n_params": 1543714304,
+  "sample_acc": 0.6315390447308568,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.6315390447308568,
+      "ci95": [
+        0.6057619408642911,
+        0.6573161485974223
+      ],
+      "gen_tokens": 101.39878695981804,
+      "flops": 3576569524440.6006
+    }
+  ],
+  "mean_gen_tokens_per_sample": 101.39878695981804,
+  "mean_prompt_tokens": 1057.0310841546627,
+  "truncation_rate": 0.004548900682335102,
+  "extraction_methods": {
+    "hash": 0.9931766489764974,
+    "last_number": 0.006823351023502654
+  },
+  "mean_unique_answers": 1.0,
+  "wall_seconds": 153.84
+}

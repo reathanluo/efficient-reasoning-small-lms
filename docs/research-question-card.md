@@ -1,6 +1,6 @@
 # Research Question Card — Topic G: Efficient Reasoning with Small LMs
 
-_Drafted 2026-10-16. Status: candidate, not yet locked by the team._
+_Drafted 2026-10-16. Status: tested on GSM8K test, 4 Nov 2026. H1-H3 are all not supported; see [Results](#results-on-gsm8k-test-4-nov-2026)._
 
 ## Research Question Card
 
@@ -40,6 +40,14 @@ Small models run on cheap hardware and on devices, where inference tokens are th
 - H3 fails if long-CoT SFT is at least as accurate as concise SFT at 1.5B.
 
 Negative results are acceptable per the handout and should be reported.
+
+### Results on GSM8K test (4 Nov 2026)
+
+These are means over 3 seeds with paired-bootstrap 95% CIs, from `python -m reasoning.eval.hypotheses results/scored/gsm8k_test` (output in `results/tables/hypotheses_gsm8k_test.txt`). `gsm8k_val` gave the same verdicts.
+
+- **H1: not supported.** Within 512 tokens, concise with voting loses to standard with one greedy answer, which uses no more tokens. It loses by 17.4 points [15.2, 19.6] at 0.5B (maj@4, 311 tokens, against 315) and 16.8 points [14.3, 19.2] at 1.5B (maj@8, 471 tokens, against 277). This holds on every seed. Standard SFT is the best curve at every budget, but only 0.7-1.8 points above the Instruct baseline, a gap we have not tested.
+- **H2: not supported.** Concise answers are *more* diverse: among 8 samples they give 1.1 more unique answers at 0.5B and 1.6 more at 1.5B. The gain from k = 1 to 8 is smaller than standard's at 0.5B (8.9 against 13.4 points) but larger at 1.5B (11.3 against 9.2).
+- **H3: not supported at 1.5B.** With one greedy answer, long beats concise by 5.6 points [3.0, 8.2] at 1.5B (McNemar p < 0.05 on every seed). At 0.5B they are tied (-0.4 points, p = 0.78). The failure-mode part holds: 32-34% of greedy long answers hit the 4,096-token cap, against 2-4% of concise ones. Long uses 10-17 times the tokens. At 1.5B, concise with 16 votes (61.2%, 941 tokens) beats long greedy (59.8%, 1,928 tokens).
 
 **Minimal next action:**
 1. Set up the environment on the NTU cluster: vLLM, transformers, peft, and the models downloaded.

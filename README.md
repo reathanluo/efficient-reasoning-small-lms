@@ -213,11 +213,15 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
   The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1 prefix caching is off (see above), so wall-clock time includes recomputing it.
 - **Self-consistency:** 16 samples at T = 0.7. maj@k is computed from subsets of those 16.
 
-## Status (27 Oct 2026)
+## Status (4 Nov 2026)
 
-- The evaluation harness is written and its 26 unit tests pass. Its vLLM path, LoRA serving, `evaluate` and `compare` have run on a TC1 V100 (smoke test, 27 Oct).
-- Teacher data (A) is done: `data/sft/` holds the four datasets on 6,547 shared problems, with `stats.json`. How they were made is in `scripts/teacher/README.md`.
-- The training package (B) holds its interface contract only.
+All experiments are done. Next is the report, due Mon 16 Nov (we submit Sun 15 Nov).
+
+- **Teacher data (A):** `data/sft/` holds the four datasets on 6,547 shared problems, with `stats.json`. How they were made is in `scripts/teacher/README.md`.
+- **Training (B):** 24 LoRA adapters (4 styles x 2 sizes x 3 seeds), protocol `sft-v1-20261031`. The records are in `scripts/train/records/`, and the weights are backed up in the GitHub release `person-b-adapters-20261101`.
+- **Evaluation (C):** every adapter and baseline has run on `gsm8k_val` (29 Oct-2 Nov) and `gsm8k_test` (2-4 Nov). The tables, figures and paired tests are in `results/`; see [results/README.md](results/README.md). The evaluation harness's 31 unit tests pass.
+- **Hypotheses:** on `gsm8k_test`, H1, H2 and H3 are all not supported. The numbers are in [docs/research-question-card.md](docs/research-question-card.md#results-on-gsm8k-test-4-nov-2026).
+- **Not run:** the optional out-of-distribution checks on `svamp` and `gsm_symbolic`.
 
 Dependencies: see `requirements.txt` (vLLM, transformers, datasets, peft, accelerate, pytest).
 
