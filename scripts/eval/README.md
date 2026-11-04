@@ -1,5 +1,7 @@
 # Final runs on `gsm8k_test` (owner: Person C)
 
+**Done, 2-4 Nov 2026.** All 10 jobs completed without hitting the time limit, and the results are in `results/` (see `results/README.md`). This page records how they were run.
+
 Everything runs from one TC1 account, one job at a time. The GPU hours are estimates scaled from the `gsm8k_val` runs: the test set has 2.6 times as many questions.
 
 **Settings are frozen.** Nothing changes after anyone has seen a test score. Prompts, caps, the 4,096-token limit and T = 0.7 all stay as they were on `gsm8k_val`.
