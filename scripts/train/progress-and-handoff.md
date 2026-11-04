@@ -1,6 +1,14 @@
 # Person B progress and handoff
 
-## Current completion record: 1 November 2026
+## Update: 4 November 2026
+
+The handoff is complete. The weight archive was published as the GitHub Release
+`person-b-adapters-20261101` on 1 November, and C loaded all 24 adapters from it
+and evaluated them on `gsm8k_val` and `gsm8k_test`. The "Remaining actions"
+below are done, except copying the Methods text into the report. For the
+project's current status, see the Status section of the top-level `README.md`.
+
+## Completion record: 1 November 2026
 
 All 24 final adapters are trained and validation-scored. The restored Mac archive
 was independently checked against the frozen protocol: exact 24-run matrix,

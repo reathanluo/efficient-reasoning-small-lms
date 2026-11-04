@@ -131,8 +131,9 @@ The frozen configuration ID is `sft-v1-20261031`. Per-run IDs, actual adapter pa
 weight/data hashes and scores are in `scripts/train/records/final-handoff-manifest.csv`.
 The two pilot-named seed-zero folders are preserved in that manifest rather than
 renamed. All 24 restored weight hashes and all 12,000 validation correctness flags
-were checked on 1 November. Training/validation completion is distinct from
-delivery: a GitHub Release handoff is prepared but not yet published or received.
+were checked on 1 November. The weights were published as the GitHub Release
+`person-b-adapters-20261101` on 1 November, and C evaluated all 24 adapters from
+it on `gsm8k_val` and `gsm8k_test`.
 
 ## Frozen hyperparameter table
 
