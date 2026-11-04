@@ -8,7 +8,7 @@ Small, committed outputs that the report uses:
 
 Raw generations stay in `runs/`, which is gitignored because it is too large.
 
-Files directly in `scored/` and `tables/` are from `gsm8k_val`. Other splits go in a subfolder named after the split, because a run has the same file name on every split. For example, to publish the `gsm8k_test` runs:
+Run files (`*.scored.jsonl`, `*.summary.json`, `*.meta.json`) directly in `scored/` and `tables/` are from `gsm8k_val`. Other splits go in a subfolder named after the split, because a run has the same file name on every split. CSV tables and figures stay at the top level, with the split in their names. For example, to publish the `gsm8k_test` runs:
 
 ```bash
 mkdir -p results/scored/gsm8k_test results/tables/gsm8k_test
@@ -47,3 +47,14 @@ Read these with four caveats, plus the contamination caveat above:
 - **Runaway answers.** A few answers never stop and hit the 4,096-token cap, which pulls up mean token costs. Greedy concise has a mean of 101 tokens (1.5B) and 162 (0.5B), but a median of about 38. `scored/` has per-sample tokens for medians and budget analyses.
 - **Long style.** About 30% of greedy long answers and 18-25% of sampled ones hit the cap. Person B's lower long scores used a 512-token cap, so don't compare them with these.
 - **Folder names.** `long_15B_s0_pilot_70806` and `standard_05B_s0_pilot_70807` are seed 0 of their conditions, as recorded in Person B's handoff manifest.
+
+### Baselines and students on `gsm8k_test`
+
+These are the final runs, on the 1,319 GSM8K test problems: TC1 jobs 71801, 71802, 71848, 71888, 71938, 71939, 72035, 72036, 72061 and 72168, 2-4 Nov 2026, with the same settings as on `gsm8k_val` (V100, float16, vLLM 0.7.3; 1,024-token cap for baselines, 4,096 for students). The one difference: long students used 8 samples (`sc8`) instead of 16, because 16 long samples on 1,319 problems do not fit in a 6-hour job. See `scripts/eval/README.md`.
+
+- `scored/gsm8k_test/` and `tables/gsm8k_test/` hold the 10 baseline and 48 student runs.
+- `tables/baselines_gsm8k_test.csv` and `tables/students_gsm8k_test.csv` are one row per run (`python -m reasoning.eval.table`).
+- `tables/students_mean_gsm8k_test.csv` and `figures/accuracy_vs_tokens_gsm8k_test.png` and `.pdf` are the seed means and their plot (`python -m reasoning.eval.plot results/tables/gsm8k_test --split gsm8k_test`).
+- `tables/hypotheses_gsm8k_test.txt` is the output of `python -m reasoning.eval.hypotheses results/scored/gsm8k_test`: the paired tests of H1-H3 from the research question card. A bootstrap p of 0.000 means p < 0.001 (2,000 resamples).
+
+Every model scores about 11 points lower here than on `gsm8k_val` (1.5B standard greedy 74.9% against 85.9%, 1.5B Instruct 73.5% against 85.2%), which fits the contamination caveat above. The ranking of conditions is the same on both splits.

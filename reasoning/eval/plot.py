@@ -4,6 +4,9 @@
         --out results/figures/accuracy_vs_tokens_gsm8k_val \
         --csv results/tables/students_mean_gsm8k_val.csv
 
+For another split, point it at that split's folder and pass --split, e.g.
+results/tables/gsm8k_test with --split gsm8k_test.
+
 Reads the students' *.summary.json files and averages over training seeds. Each
 style is a voting curve (k = 1, 2, 4, 8 and, where run, 16 at T = 0.7) plus one
 greedy answer.
@@ -99,6 +102,7 @@ def main() -> None:
     ap.add_argument("folder", type=Path)
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--csv", type=Path)
+    ap.add_argument("--split", default="gsm8k_val", help="split name for the y-axis label")
     args = ap.parse_args()
 
     rows = load_points(args.folder)
@@ -106,7 +110,7 @@ def main() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.5), sharey=True, facecolor=SURFACE)
     for ax, size in zip(axes, SIZES):
         draw(ax, rows, size)
-    axes[0].set_ylabel("Accuracy on gsm8k_val (%)", fontsize=9, color=MUTED)
+    axes[0].set_ylabel(f"Accuracy on {args.split} (%)", fontsize=9, color=MUTED)
 
     handles = [Line2D([], [], color=color, lw=2, marker="o", ms=5.5, mec=SURFACE, label=label)
                for label, color in [*STYLES.values(), INSTRUCT]]

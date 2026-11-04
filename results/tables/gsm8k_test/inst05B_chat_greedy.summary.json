@@ -1,0 +1,35 @@
+{
+  "run": "inst05B_chat_greedy",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "lora": null,
+  "prompt": "chat",
+  "split": "gsm8k_test",
+  "n_questions": 1319,
+  "n_samples": 1,
+  "temperature": 0.0,
+  "n_params": 494032768,
+  "sample_acc": 0.46929492039423804,
+  "curve": [
+    {
+      "k": 1,
+      "acc": 0.46929492039423804,
+      "ci95": [
+        0.44275966641395,
+        0.49583017437452614
+      ],
+      "gen_tokens": 300.7642153146323,
+      "flops": 410118362129.85596
+    }
+  ],
+  "mean_gen_tokens_per_sample": 300.7642153146323,
+  "mean_prompt_tokens": 114.30780894617135,
+  "truncation_rate": 0.012130401819560273,
+  "extraction_methods": {
+    "boxed": 0.8203184230477635,
+    "hash": 0.13570887035633056,
+    "last_number": 0.03790750568612585,
+    "answer_is": 0.006065200909780136
+  },
+  "mean_unique_answers": 1.0,
+  "wall_seconds": 102.67
+}
