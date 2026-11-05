@@ -118,7 +118,7 @@ uv venv --seed --python 3.11 .venv       # the job scripts use .venv/ when it ex
 source .venv/bin/activate
 export UV_CACHE_DIR=/tmp/uv-cache-$USER UV_LINK_MODE=copy   # home storage has no file locks
 uv pip install -r requirements.txt
-python -m pytest tests                   # must print 26 passed
+python -m pytest tests                   # must print 31 passed
 python -c "import vllm, torch; print(vllm.__version__, torch.__version__)"   # 0.7.3 2.5.1
 
 # Download the models once on the head node; jobs read them offline.
@@ -157,7 +157,7 @@ For writing code, running tests and debugging on a few questions. vLLM needs Lin
 uv venv --python 3.11
 source .venv/bin/activate
 uv pip install transformers datasets pytest torch
-python -m pytest tests          # should print 26 passed
+python -m pytest tests          # should print 31 passed
 ```
 
 In VS Code, pick the `.venv` interpreter (Cmd+Shift+P → Python: Select Interpreter). Run `source .venv/bin/activate` in every new terminal.
