@@ -44,6 +44,11 @@ python -m reasoning.teacher.build --standard data/sft/raw/standard.filtered.json
     --long data/sft/raw/long.filtered.jsonl --concise data/sft/raw/concise.filtered.jsonl --out data/sft
 ```
 
+Job run times (`sacct`, one V100 each): standard 19m07s (70033) and 8m03s (70069);
+long 46m33s, 43m57s and 43m16s (70040, 70041, 70054) and 1h36m54s (70085);
+concise 19m22s, 21m00s, 19m15s and 17m47s (70112, 70113, 70116, 70123). Total
+5h35m, about 6 GPU hours.
+
 Result: 6,973 problems → standard 6,797, long 6,738, concise 6,600 kept → 6,547
 in every style. Mean rationale length in Qwen2.5 tokens: long 1,209, standard 242,
 concise 37 (`data/sft/stats.json`). Sampling is seeded (seed 0), but vLLM batching
