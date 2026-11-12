@@ -4,27 +4,29 @@
 verified from the restored Mac backup. See `scripts/train/handoff/README.md`,
 `scripts/train/handoff/validation-summary.md` and the CSV manifest under
 `scripts/train/records/`. The Methods draft now uses actual final records.
-GitHub Release delivery and receipt by C remain pending. Earlier instructions
+The weights were published as the GitHub Release `person-b-adapters-20261101`
+on 1 November, and Person C loaded all 24 adapters from it and evaluated them on
+`gsm8k_val` and `gsm8k_test`. Earlier instructions
 below describe how the completed work was produced, not jobs to resubmit.
 
 **Current phase (31 October):** common training protocol frozen in
 `configs/sft-final.json`; see `scripts/train/final-runs.md` for authoritative
 commands, pilot reuse, separate vLLM validation and recovery. Earlier provisional
-sections below are development history. The revised deferred pipeline must pass
-its own TC1 smoke check before final training jobs are launched.
+sections below are development history. The revised deferred pipeline passed
+its TC1 smoke check (job 70910) before the final training jobs were launched.
 
 ## Person B working documents
 
-- `scripts/train/methods-draft.md`: report-ready prose to review; final placeholders
-  and provisional settings are explicit. It has not been copied into the shared Doc.
-- `scripts/train/progress-and-handoff.md`: current state, record collection,
-  backup/checksum commands, per-adapter handoff checklist and an unsent team update.
+- `scripts/train/methods-draft.md`: the Methods text, with the final records and
+  timings, that the report's LoRA fine-tuning section is based on.
+- `scripts/train/progress-and-handoff.md`: final state (4 November update at the top),
+  record collection, backup/checksum commands and the per-adapter handoff checklist.
 - `configs/tuning-results.csv`: development scores from the reported TC1 runs;
-  confirm against archived summaries before publication.
-- `configs/sft-candidate.json`: proposed common settings and dataset hashes; not
-  frozen and not automatically read by the training CLI.
-- `configs/final-run-checklist.csv`: 24 planned style/size/seed entries with
-  proposed paths; seeds 0/1/2 require confirmation. It is not a batch launcher.
+  the source of the report's Table 2 (LoRA rank).
+- `configs/sft-candidate.json`: the earlier proposed settings and dataset hashes,
+  superseded by the frozen `configs/sft-final.json`; not read by the training CLI.
+- `configs/final-run-checklist.csv`: the 24 style/size/seed entries (seeds
+  0/1/2) with their adapter paths and status. It is a tracker, not a batch launcher.
 
 To collect small evidence on TC1 without copying model weights or raw generations:
 
