@@ -1,6 +1,6 @@
 # Research Question Card — Topic G: Efficient Reasoning with Small LMs
 
-_Drafted 2026-10-16. Status: tested on GSM8K test, 4 Nov 2026. H1-H3 are all not supported; see [Results](#results-on-gsm8k-test-4-nov-2026)._
+_Drafted 2026-10-16. Status: tested on GSM8K test, 4 Nov 2026. H1 and H2 are not supported, and H3 holds only in its truncation part; see [Results](#results-on-gsm8k-test-4-nov-2026)._
 
 ## Research Question Card
 
@@ -102,7 +102,7 @@ These are means over 3 seeds with paired-bootstrap 95% CIs, from `python -m reas
 
 | ID | Source | Source type | Relevance | Strength |
 |---|---|---|---|---|
-| ER-20261016-smallreason-01 | Li et al., "Small Models Struggle to Learn from Strong Reasoners", arXiv 2502.12143 (ICML 2025) | preprint (abstract only so far) | ≤3B students learn better from short CoT; proposes Mix Distillation. Closest prior work for H3. | observed |
+| ER-20261016-smallreason-01 | Li et al., "Small Models Struggle to Learn from Strong Reasoners", arXiv 2502.12143; Findings of ACL 2025, pp. 25366-25394 | peer-reviewed | ≤3B students learn better from short CoT; proposes Mix Distillation. Closest prior work for H3. | observed |
 | ER-20261016-smallreason-02 | Xia et al., "TokenSkip", arXiv 2502.12067 (EMNLP 2025) | preprint (abstract only) | Token-pruned CoT for SFT. A candidate method for building condition C. | observed |
 | ER-20261016-smallreason-03 | Snell et al., "Scaling LLM Test-Time Compute Optimally…", arXiv 2408.03314 (ICLR 2025) | preprint (abstract only) | Framing for trading test-time against other compute. | observed |
 | ER-20261016-smallreason-04 | Munkhbat et al., "Self-Training Elicits Concise Reasoning in LLMs" (ACL Findings 2025) | abstract only | ~30% fewer tokens on GSM8K/MATH at similar accuracy. | observed |

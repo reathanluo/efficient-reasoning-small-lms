@@ -1,98 +1,164 @@
-# SC4001 Group Project: Efficient Reasoning with Small LMs (Topic G)
+# Rationale Length or More Votes? (SC4001 Group 77, Topic G)
 
-**Research question:** for Qwen2.5-0.5B/1.5B on grade-school maths (GSM8K), is a fixed token budget better spent:
+Code and results for our SC4001 Neural Networks and Deep Learning group project: Chen Han, Chua Jun Hong and Luo Yuxuan.
 
-- in training, by LoRA-distilling long, standard or concise rationales from a teacher, or
-- at inference, by self-consistency (majority vote over several samples)?
+**Research question:** for Qwen2.5-0.5B and Qwen2.5-1.5B on GSM8K maths problems, how do rationale-training style and self-consistency affect accuracy under a common average inference-token budget?
 
-And do the two compose? The hypotheses and success criteria are in [docs/research-question-card.md](docs/research-question-card.md).
+We fine-tuned both base models with LoRA on the same 6,547 GSM8K training problems written in four styles (long, standard, concise and answer-only rationales from larger teacher models), with 3 seeds each: 24 adapters. We then evaluated every adapter on the 1,319 GSM8K test questions with greedy decoding and with self-consistency voting, and counted generated tokens per question as the cost. The hypotheses and the success criteria we fixed before testing are in [docs/research-question-card.md](docs/research-question-card.md).
 
-**Deadline:** Mon 16 Nov 2026, 11:59 PM. We aim to submit on Sun 15 Nov.
+**Main results on `gsm8k_test`** (mean over 3 seeds, generated tokens per question in brackets):
 
-## What each person does
+| Training style | 0.5B, greedy | 0.5B, best vote | 1.5B, greedy | 1.5B, best vote |
+|---|---|---|---|---|
+| Standard | 48.7 (315) | 61.1 (4,681) | 74.9 (277) | 83.5 (4,349) |
+| Concise | 32.3 (199) | 38.8 (1,243) | 54.2 (115) | 61.2 (941) |
+| Long | 31.9 (1,862) | 44.0 (16,541) | 59.8 (1,928) | 79.3 (14,825) |
+| Answer-only | 10.6 (5.5) | 9.1 (85) | 13.4 (5.5) | 12.7 (85) |
+| Instruct, no training | 46.9 (301) | 60.4 (4,652) | 73.5 (291) | 82.5 (4,353) |
+| Base 8-shot | 36.6 (123) | 45.6 (1,672) | 63.2 (101) | 73.7 (1,582) |
 
-Each person owns one stage of the pipeline: its folders, its jobs on the cluster, and the report sections that describe it.
+Best vote is maj@16, or maj@8 for long. In short:
 
-| Role | Name | GitHub |
-|---|---|---|
-| Person A: teacher data | Chen Han | [@Chen-Han-TX](https://github.com/Chen-Han-TX) |
-| Person B: training | Chua Jun Hong | [@leclerc162003](https://github.com/leclerc162003) |
-| Person C: evaluation | Luo Yuxuan | [@reathanluo](https://github.com/reathanluo) |
+- **H1 is not supported.** Within 512 tokens, concise students with voting lose to one greedy answer from the standard student, by 17.4 points at 0.5B and 16.8 points at 1.5B.
+- **H2 is not supported.** Concise answers are more varied, not less, and their voting gain is smaller than standard's at 0.5B but larger at 1.5B.
+- **H3 holds only in its truncation part.** About a third of greedy long answers hit the 4,096-token cap, but at 1.5B long students are 5.6 points more accurate than concise ones.
 
-Everyone can read and run anything. To change a folder you don't own, open a pull request (PR) and tag its owner. The git workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). Live task status is in the [tracker](https://claude.ai/artifact/Lov9qQxdkCTrFS5uhqqnQy).
+## Team
 
-### Person A (Chen Han): teacher data
+| Role | Name | GitHub | Work |
+|---|---|---|---|
+| Person A: teacher data | Chen Han | [@Chen-Han-TX](https://github.com/Chen-Han-TX) | `reasoning/teacher/`, `scripts/teacher/`, `data/sft/` |
+| Person B: training | Chua Jun Hong | [@leclerc162003](https://github.com/leclerc162003) | `reasoning/train/`, `scripts/train/`, `configs/` |
+| Person C: evaluation | Luo Yuxuan | [@reathanluo](https://github.com/reathanluo) | `reasoning/eval/`, `scripts/eval/`, `results/` |
 
-**Your folders:** `reasoning/teacher/`, `scripts/teacher/`, `data/sft/`
+The shared code (`reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py`, `data/splits/`, `tests/`) was changed only through pull requests reviewed by the other two members. The git workflow is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-1. Pick the teacher models (about 7B), and write `reasoning/teacher/` code that runs them with vLLM on all 6,973 problems in `data/splits/gsm8k_train.jsonl`. Generate a **standard** and a **long** rationale for each problem.
-2. Keep only rationales whose final answer is correct. Check them with `reasoning.answer.is_correct`, not a new parser.
-3. Make a **concise** rewrite of each long rationale, and check the answer didn't change.
-4. Write the four datasets plus `stats.json` to `data/sft/`, in the format in [reasoning/teacher/\_\_init\_\_.py](reasoning/teacher/__init__.py). Use exactly the same problem IDs in every file. **Due Mon 2 Nov.**
-5. Read the six papers in `docs/research-question-card.md` in full and check every citation.
-6. **Report:** literature review and the Data subsection.
-
-### Person B (Chua Jun Hong): training
-
-**Your folders:** `reasoning/train/`, `scripts/train/`, `configs/`
-
-1. Write the LoRA SFT script in `reasoning/train/`. Build inputs with `prompts.chat_prompt` and targets with `prompts.format_target`, and compute the loss on answer tokens only.
-2. **Don't wait for A.** Debug it on GSM8K's human solutions, which are already in `data/splits/gsm8k_train.jsonl` (the `solution` field).
-3. Sweep learning rate, epochs and rank (8, 16, 32) on `gsm8k_val`. Save the winning settings in `configs/` and freeze them.
-4. From 2 Nov, train 24 adapters: 4 styles × 2 sizes × 3 seeds. Save them to `ckpt/{style}_{size}_s{seed}/`, each with a `train_log.json`, in the format in [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py).
-5. **Report:** Methods (SFT, LoRA, training setup) and the hyperparameter table.
-
-### Person C (Luo Yuxuan): evaluation
-
-**Your folders:** `reasoning/eval/`, `scripts/eval/`, `results/`
-
-1. **This week:** set up the TC1 environment (below), confirm your QoS with `MyTCinfo`, and submit `scripts/eval/slurm_baselines.sh` to run the baseline matrix on `gsm8k_val`. This is the first run of the vLLM path.
-2. Evaluate each of B's adapters on `gsm8k_val` with `sbatch scripts/eval/slurm_students.sh gsm8k_val`: greedy, and 16 samples for self-consistency, with a 4,096-token cap so long-style students are not cut off by our setting. Copy each finished batch's scored files into `results/scored/`.
-3. Do the final runs on `gsm8k_test` with the frozen settings, following [scripts/eval/README.md](scripts/eval/README.md). Run `svamp` and `gsm_symbolic` after that if time allows.
-4. Make the accuracy-vs-tokens Pareto plot, maj@k curves, diversity and truncation plots, and significance tests (`reasoning/eval/compare.py`). Commit them to `results/` and **freeze them on Thu 12 Nov**.
-5. **Report:** Experiments and Results.
-
-### Everyone
-
-- **9–11 Nov:** error taxonomy. Each person labels about 100 wrong answers. All three label the same 30, to check you agree.
-- **13–15 Nov:** Introduction, Discussion and the AI Use Statement. Then everyone reads the whole report and checks they can explain every part.
-- **Shared code** (`reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py`, `data/splits/`, `tests/`): only change it through a PR that both other people approve. Every result depends on it.
-- **Sun 15 Nov:** the leader submits the PDF report and the code ZIP on NTULearn.
-
-## What each folder means
+## What each folder holds
 
 | Folder | What it is | Owner | In git? |
 |---|---|---|---|
 | `reasoning/` | The project's Python package. Run its modules from the repo root with `python -m reasoning.<module>`. | — | yes |
 | `reasoning/data.py`, `prompts.py`, `answer.py`, `stats.py` | Shared core: the data splits, the one prompt format, the one answer parser, statistics helpers | Shared | yes |
-| `reasoning/teacher/` | Teacher generation, rejection sampling and concise rewriting. Its `__init__.py` holds the output format. | A | yes |
-| `reasoning/train/` | LoRA fine-tuning code. Its `__init__.py` holds the adapter format. | B | yes |
-| `reasoning/eval/` | `generate.py` (run a model), `evaluate.py` (score a run), `compare.py` (significance tests) | C | yes |
-| `scripts/teacher/`, `scripts/train/`, `scripts/eval/` | Shell and SLURM job scripts for the cluster, one folder per owner | A / B / C | yes |
-| `configs/` | The frozen training hyperparameters | B | yes |
-| `data/splits/` | Fixed train / val / test / out-of-distribution splits. Everyone uses these exact files. | Shared | yes |
+| `reasoning/teacher/` | Teacher generation (`generate.py`), rejection sampling (`filter.py`), concise rewriting (`compress.py`) and building the four datasets (`build.py`). `__init__.py` holds the output format. | A | yes |
+| `reasoning/train/` | LoRA fine-tuning (`sft.py`, `run_final.py`), data and record checks, and their tests. `__init__.py` holds the adapter format. | B | yes |
+| `reasoning/eval/` | `generate.py` (run a model), `evaluate.py` (score a run), `table.py` (CSV tables), `plot.py` (Figure 1), `hypotheses.py` (paired tests of H1-H3), `compare.py` (any two runs) | C | yes |
+| `scripts/teacher/`, `scripts/train/`, `scripts/eval/` | SLURM job scripts for the TC1 cluster, each with a README of the exact jobs we ran | A / B / C | yes |
+| `configs/` | The frozen training settings (`sft-final.json`) and the tuning results (`tuning-results.csv`) | B | yes |
+| `data/splits/` | Fixed train / val / test / out-of-distribution splits. Everyone used these exact files. | Shared | yes |
 | `data/sft/` | The four training datasets (`long`, `standard`, `concise`, `answer_only`) and `stats.json` | A | yes; `raw/` is not |
-| `results/tables/`, `results/figures/` | The small final outputs the report uses: summary JSON, CSV tables, plots | C | yes |
-| `notebooks/` | Exploration notebooks, named `<letter>_<topic>.ipynb` so nobody edits the same one | Everyone | yes |
-| `docs/assignment/` | The project handout and FAQ | Everyone | yes |
-| `docs/research-question-card.md` | Research question, hypotheses H1–H3, success criteria, paper list | Everyone | yes |
-| `docs/handbook.docx` | Snapshot of the project handbook | Everyone | yes |
-| `docs/report/` | Report figures, final PDF, `references.bib` | Everyone | yes |
-| `tests/` | Unit tests. GitHub runs them on every push. | Shared | yes |
-| `.github/workflows/` | The automatic test run | Shared | yes |
+| `results/` | Per-question scored answers, run summaries, CSV tables, figures and the paired tests. See [results/README.md](results/README.md). | C | yes |
+| `docs/` | The research question card, the assignment handout and FAQ, and a snapshot of our planning handbook | Everyone | yes |
+| `tests/` | Unit tests for the shared code and evaluation. GitHub runs them on every push. | Shared | yes |
 | `runs/` | Raw model outputs from `reasoning.eval.generate` (large) | C | **no**, stays on the cluster |
-| `ckpt/` | Trained LoRA adapters (large) | B | **no**, stays on the cluster |
-| `slurm-*.out`, `slurm-*.err` | SLURM job logs, written in the repo root | Everyone | **no** |
+| `ckpt/` | Trained LoRA adapters (large) | B | **no**, see step 3 below |
 
-## Handoffs
+## Reproducing the results
 
-The handoffs between stages are written down as file formats, so nobody waits on anyone's code:
+The pipeline has five steps. Steps 2 to 4 need a GPU; we ran them on NTU's TC1 cluster (one NVIDIA V100 32 GB per job, 6-hour limit). Every step's output is committed, so you can start at any step. **Step 5 rebuilds every table, the figure and the paired tests from the committed files in a few seconds, with no GPU.**
 
-| From → to | What | Format | Due |
+| Step | What | GPU time we used | Output (committed) |
 |---|---|---|---|
-| A → B | `data/sft/{style}.jsonl` | [reasoning/teacher/\_\_init\_\_.py](reasoning/teacher/__init__.py) | Mon 2 Nov |
-| B → C | `ckpt/{style}_{size}_s{seed}/` LoRA adapters | [reasoning/train/\_\_init\_\_.py](reasoning/train/__init__.py) | 2–8 Nov, as they finish |
-| C → report | `results/tables/`, `results/figures/` | [results/README.md](results/README.md) | Thu 12 Nov |
+| 1 | Data splits | none | `data/splits/` |
+| 2 | Teacher rationales and the four training sets | about 6 h | `data/sft/` |
+| 3 | 24 LoRA adapters | about 20 h | GitHub release `person-b-adapters-20261101`, records in `scripts/train/records/` |
+| 4 | Evaluation on `gsm8k_test` | about 32 h | `results/scored/gsm8k_test/`, `results/tables/gsm8k_test/` |
+| 5 | Tables, figure and paired tests | none | `results/tables/`, `results/figures/` |
+
+For dependencies, set up either the cluster (GPU steps) or a laptop (step 5 and the tests), as described in the sections further down.
+
+### Step 1: data splits
+
+```bash
+python -m reasoning.data --out data/splits
+```
+
+This downloads GSM8K, SVAMP and GSM-Symbolic and writes the splits in the table under [Data preparation](#data-preparation). The 500 validation problems are held out from GSM8K train with seed 0. All tuning used `gsm8k_val`; `gsm8k_test` was used only for the final runs.
+
+### Step 2: teacher data (Person A)
+
+The exact jobs, in order, are in [scripts/teacher/README.md](scripts/teacher/README.md). In short, on TC1:
+
+```bash
+S=scripts/teacher/slurm_teacher.sh
+sbatch $S reasoning.teacher.generate --style standard --out data/sft/raw/standard.jsonl   # Qwen2.5-7B-Instruct
+sbatch $S reasoning.teacher.generate --style long --out data/sft/raw/long.jsonl           # DeepSeek-R1-Distill-Qwen-7B (we split it into 3 jobs)
+python -m reasoning.teacher.filter --style standard data/sft/raw/standard.jsonl --out data/sft/raw/standard.filtered.jsonl   # keep correct answers
+python -m reasoning.teacher.filter --style long data/sft/raw/long.jsonl --out data/sft/raw/long.filtered.jsonl
+sbatch $S reasoning.teacher.compress data/sft/raw/long.filtered.jsonl --n 2 --out data/sft/raw/concise.filtered.jsonl
+python -m reasoning.teacher.build --standard data/sft/raw/standard.filtered.jsonl \
+    --long data/sft/raw/long.filtered.jsonl --concise data/sft/raw/concise.filtered.jsonl --out data/sft
+```
+
+The result is `data/sft/{long,standard,concise,answer_only}.jsonl` (6,547 shared problems each) and `data/sft/stats.json`, the source of the report's Table 1.
+
+### Step 3: LoRA training (Person B)
+
+The frozen settings are in `configs/sft-final.json` (protocol `sft-v1-20261031`: rank 8, alpha 16, learning rate 1e-4, one epoch, FP32, 4,096-token limit). One job trains one style, size and seed:
+
+```bash
+sbatch scripts/train/slurm_final.sh standard 15B 0     # styles: long standard concise answer_only; sizes: 05B 15B; seeds: 0 1 2
+python -m reasoning.train.run_final standard 15B 0 --dry-run   # preview an entry without a GPU
+```
+
+Each run writes `ckpt/<style>_<size>_s<seed>/`. Two seed-0 adapters kept their pilot names, `ckpt/long_15B_s0_pilot_70806` and `ckpt/standard_05B_s0_pilot_70807`. The full procedure, including the pilots and recovery, is in [scripts/train/final-runs.md](scripts/train/final-runs.md). The hyperparameter sweep behind the report's Table 2 is in `configs/tuning-results.csv`.
+
+To skip training, download our 24 adapters (611 MB) from the GitHub release `person-b-adapters-20261101` of this repository and unpack them in the repo root. Access needs repository permission because the repository is private:
+
+```bash
+gh release download person-b-adapters-20261101 -R reathanluo/sc4001-group-project
+tar -xzf sc4001-final-backup-20261101.tar.gz     # creates ckpt/ (plus copies of configs/ and the training records)
+cd ckpt && sha256sum -c ../scripts/train/records/final-weights.sha256 && cd ..   # expect 24 OK (shasum -a 256 -c on a Mac)
+```
+
+### Step 4: evaluation on `gsm8k_test` (Person C)
+
+The ten jobs, with the exact commands, are in [scripts/eval/README.md](scripts/eval/README.md). For example:
+
+```bash
+sbatch scripts/eval/slurm_baselines.sh gsm8k_test                                   # untrained baselines (Instruct, base chat, base 8-shot)
+sbatch scripts/eval/slurm_students.sh gsm8k_test ckpt/standard_15B_*                # greedy + 16 samples per adapter
+RUNS="greedy sc8" sbatch --export=ALL scripts/eval/slurm_students.sh gsm8k_test ckpt/long_15B_s1   # long: 8 samples
+```
+
+Students may write up to 4,096 tokens and baselines up to 1,024. Samples use temperature 0.7. Long students used 8 samples instead of 16 on the test set, because 16 do not fit in one 6-hour job. Each job writes raw generations to `runs/` and scores them; we then copied the scored files into `results/` as described in [results/README.md](results/README.md).
+
+To run and score one model by hand:
+
+```bash
+python -m reasoning.eval.generate --model Qwen/Qwen2.5-1.5B --lora ckpt/standard_15B_s1 --prompt chat \
+    --split gsm8k_test --n 16 --temperature 0.7 --max-new-tokens 4096 --out runs/standard_15B_s1_sc16.jsonl
+python -m reasoning.eval.evaluate runs/standard_15B_s1_sc16.jsonl
+```
+
+### Step 5: tables, figure and paired tests (no GPU)
+
+Run from the repo root. Each command rebuilds a committed file. The bootstrap is seeded, but a p-value can differ in the third decimal between Python versions.
+
+```bash
+T=results/tables/gsm8k_test
+# One row per run (report Table 3, Figure 2): baselines, then students
+python -m reasoning.eval.table $T/base*.summary.json $T/inst*.summary.json --out results/tables/baselines_gsm8k_test.csv
+python -m reasoning.eval.table $(ls $T/*.summary.json | grep -vE '/(base|inst)') --out results/tables/students_gsm8k_test.csv
+# Seed means and Figure 1 (needs matplotlib)
+python -m reasoning.eval.plot $T --split gsm8k_test \
+    --out results/figures/accuracy_vs_tokens_gsm8k_test --csv results/tables/students_mean_gsm8k_test.csv
+# Paired tests of H1-H3 (report Table 4 and the H3 section)
+python -m reasoning.eval.hypotheses results/scored/gsm8k_test > results/tables/hypotheses_gsm8k_test.txt
+```
+
+Where the numbers in the report come from:
+
+| In the report | File |
+|---|---|
+| Table 1 (training sets) | `data/sft/stats.json` |
+| Table 2 (LoRA rank) | `configs/tuning-results.csv` |
+| Table 3 and Figure 1 | `results/tables/students_mean_gsm8k_test.csv`, `results/tables/baselines_gsm8k_test.csv`, `results/figures/accuracy_vs_tokens_gsm8k_test.png` |
+| Table 4 and the H3 tests | `results/tables/hypotheses_gsm8k_test.txt` |
+| Figure 2 (truncation and `####` format) | the `truncation_rate` and `format_hash` columns of `results/tables/students_gsm8k_test.csv`, averaged over seeds |
+| Training time | `scripts/train/methods-draft.md` (recorded per-run times) |
+| Table A1 (hyperparameters) | `configs/sft-final.json` |
+
+`python -m reasoning.eval.compare A.scored.jsonl B.scored.jsonl --k 1` compares any two scored runs with a paired bootstrap and an exact McNemar test.
 
 ## Setup on the TC1 cluster (NTU CCDS GPU cluster)
 
@@ -112,7 +178,7 @@ From the TC1 user guide (Feb 2026). TC1 is reachable only from the NTU network: 
 
 ```bash
 ssh <ntu-id>@10.96.189.11
-git clone git@github.com:reathanluo/sc4001-group-project.git && cd sc4001-group-project
+git clone git@github.com:reathanluo/sc4001-group-project.git && cd sc4001-group-project   # or copy the submitted ZIP over and unzip it
 module load uv
 uv venv --seed --python 3.11 .venv       # the job scripts use .venv/ when it exists
 source .venv/bin/activate
@@ -151,13 +217,14 @@ Each job writes `slurm-<job-name>-<jobid>.out` and `.err` in the repo root (giti
 
 ## Local setup (laptop, no GPU)
 
-For writing code, running tests and debugging on a few questions. vLLM needs Linux + CUDA, so it is left out here; use the cluster setup above for real runs. [uv](https://docs.astral.sh/uv/) downloads Python 3.11 for you, and `.venv/` is gitignored.
+Enough for step 5 above, the tests and debugging on a few questions. vLLM needs Linux + CUDA, so it is left out here; use the cluster setup above for real runs. [uv](https://docs.astral.sh/uv/) downloads Python 3.11 for you, and `.venv/` is gitignored.
 
 ```bash
 uv venv --python 3.11
 source .venv/bin/activate
-uv pip install transformers datasets pytest torch
+uv pip install transformers datasets pytest torch matplotlib
 python -m pytest tests          # should print 31 passed
+python -m pytest reasoning/train   # training checks: 15 passed (3 skip if torch is missing)
 ```
 
 In VS Code, pick the `.venv` interpreter (Cmd+Shift+P → Python: Select Interpreter). Run `source .venv/bin/activate` in every new terminal.
@@ -179,27 +246,7 @@ python -m reasoning.data --out data/splits
 | `gsm_symbolic` | 5,000 | perturbed GSM8K-test templates; robustness and contamination check |
 | `exemplars` | 8 | fixed few-shot exemplars (from `gsm8k_train`) |
 
-## Running evaluation
-
-```bash
-sbatch scripts/eval/slurm_baselines.sh      # on the TC1 head node: untrained baselines, 1,024-token cap
-sbatch scripts/eval/slurm_students.sh gsm8k_val   # trained LoRA students in ckpt/, 4,096-token cap
-bash scripts/eval/run_baselines.sh gsm8k_val  # or interactively on a GPU node
-
-python -m reasoning.eval.generate --model Qwen/Qwen2.5-1.5B-Instruct --prompt chat \
-    --split gsm8k_val --n 16 --temperature 0.7 --out runs/inst15_sc16.jsonl
-python -m reasoning.eval.evaluate runs/inst15_sc16.jsonl
-python -m reasoning.eval.compare runs/A.scored.jsonl runs/B.scored.jsonl --k 1
-```
-
-To debug locally without a GPU (slow, 5 questions):
-
-```bash
-python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --prompt fewshot \
-    --split gsm8k_val --limit 5 --max-new-tokens 256 --out runs/debug.jsonl
-```
-
-## Rules everyone follows
+## Rules we followed
 
 - **Never tune on `gsm8k_test`.** Prompts, hyperparameters, checkpoints and decoding settings are chosen on `gsm8k_val`. `generate.py` warns when the test split is used.
 - **One prompt, one target format.** SFT inputs come from `prompts.chat_prompt(tokenizer, question)` and targets from `prompts.format_target(rationale, gold)`. Only the rationale differs between conditions.
@@ -211,21 +258,13 @@ python -m reasoning.eval.generate --backend hf --model Qwen/Qwen2.5-0.5B --promp
   - wall-clock time.
   
   The 8-shot prompt's prefix is the same for every question, so report its cost separately. On TC1 prefix caching is off (see above), so wall-clock time includes recomputing it.
-- **Self-consistency:** 16 samples at T = 0.7. maj@k is computed from subsets of those 16.
+- **Self-consistency:** 16 samples at T = 0.7 (8 for long students on `gsm8k_test`). maj@k is the mean over all subsets of k samples, or over 128 random subsets when there are too many.
 
-## Status (4 Nov 2026)
+## Acknowledgements
 
-All experiments are done. Next is the report, due Mon 16 Nov (we submit Sun 15 Nov).
+We wrote the code in `reasoning/`, `scripts/` and `tests/` ourselves, with help from AI tools as described in the report's AI Use Statement. It builds on these existing models, datasets and libraries:
 
-- **Teacher data (A):** `data/sft/` holds the four datasets on 6,547 shared problems, with `stats.json`. How they were made is in `scripts/teacher/README.md`.
-- **Training (B):** 24 LoRA adapters (4 styles x 2 sizes x 3 seeds), protocol `sft-v1-20261031`. The records are in `scripts/train/records/`, and the weights are backed up in the GitHub release `person-b-adapters-20261101`.
-- **Evaluation (C):** every adapter and baseline has run on `gsm8k_val` (29 Oct-2 Nov) and `gsm8k_test` (2-4 Nov). The tables, figures and paired tests are in `results/`; see [results/README.md](results/README.md). The evaluation harness's 31 unit tests pass.
-- **Hypotheses:** on `gsm8k_test`, H1, H2 and H3 are all not supported. The numbers are in [docs/research-question-card.md](docs/research-question-card.md#results-on-gsm8k-test-4-nov-2026).
-- **Not run:** the optional out-of-distribution checks on `svamp` and `gsm_symbolic`.
-
-Dependencies: see `requirements.txt` (vLLM, transformers, datasets, peft, accelerate, pytest).
-
-## Links
-
-- Task tracker: https://claude.ai/artifact/Lov9qQxdkCTrFS5uhqqnQy
-- Project handbook: https://claude.ai/artifact/Jsqphj1rrVeXZ6AXEdq3Lo (a Google Docs copy is shared with the team; `docs/handbook.docx` is a snapshot)
+- **Models:** Qwen2.5-0.5B, Qwen2.5-1.5B and their Instruct versions (students and baselines), Qwen2.5-7B-Instruct (standard and concise teacher) and DeepSeek-R1-Distill-Qwen-7B (long teacher), all from Hugging Face.
+- **Datasets:** GSM8K (`openai/gsm8k`), SVAMP (`ChilleD/SVAMP`) and GSM-Symbolic (`apple/GSM-Symbolic`), from Hugging Face. SVAMP and GSM-Symbolic were prepared but, in the end, not evaluated.
+- **Libraries:** vLLM for generation, Hugging Face Transformers, Datasets, PEFT and Accelerate for training, PyTorch, matplotlib and pytest. Versions are pinned in `requirements.txt`; the exact TC1 environment is in `configs/tc1-smoke-packages.txt`.
+- **Methods:** LoRA (Hu et al., 2022) and self-consistency (Wang et al., 2023). The full reference list is in the report.

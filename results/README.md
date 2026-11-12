@@ -54,7 +54,7 @@ These are the final runs, on the 1,319 GSM8K test problems: TC1 jobs 71801, 7180
 
 - `scored/gsm8k_test/` and `tables/gsm8k_test/` hold the 10 baseline and 48 student runs.
 - `tables/baselines_gsm8k_test.csv` and `tables/students_gsm8k_test.csv` are one row per run (`python -m reasoning.eval.table`).
-- `tables/students_mean_gsm8k_test.csv` and `figures/accuracy_vs_tokens_gsm8k_test.png` and `.pdf` are the seed means and their plot (`python -m reasoning.eval.plot results/tables/gsm8k_test --split gsm8k_test`).
+- `tables/students_mean_gsm8k_test.csv` and `figures/accuracy_vs_tokens_gsm8k_test.png` and `.pdf` are the seed means and their plot (`python -m reasoning.eval.plot results/tables/gsm8k_test --split gsm8k_test --out results/figures/accuracy_vs_tokens_gsm8k_test --csv results/tables/students_mean_gsm8k_test.csv`).
 - `tables/hypotheses_gsm8k_test.txt` is the output of `python -m reasoning.eval.hypotheses results/scored/gsm8k_test`: the paired tests of H1-H3 from the research question card. A bootstrap p of 0.000 means p < 0.001 (2,000 resamples).
 
 Every model scores about 11 points lower here than on `gsm8k_val` (1.5B standard greedy 74.9% against 85.9%, 1.5B Instruct 73.5% against 85.2%), which fits the contamination caveat above. The ranking of conditions is the same on both splits.
